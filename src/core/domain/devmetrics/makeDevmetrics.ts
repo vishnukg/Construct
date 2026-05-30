@@ -18,6 +18,8 @@ type MakeDevmetricsCfg = {
   now?: () => Date;
 };
 
+const getCurrentDate = () => new Date();
+
 const getMetricRatio = ({ value, target, lowerIsBetter }: Devmetric) => {
   if (target === 0) {
     return value === 0 ? 1 : 2;
@@ -50,9 +52,9 @@ const makeDevmetrics = ({
   source,
   insightEngine,
   logger,
-  now = () => new Date(),
+  now = getCurrentDate,
 }: MakeDevmetricsCfg): GetDevmetricsReportFn => {
-  return async (): Promise<DevmetricsReport> => {
+  const getDevmetricsReport = async (): Promise<DevmetricsReport> => {
     logger.info("devmetrics.report.started");
 
     const rawMetrics = await source.listMetrics();
@@ -70,6 +72,8 @@ const makeDevmetrics = ({
       insights,
     };
   };
+
+  return getDevmetricsReport;
 };
 
 export default makeDevmetrics;

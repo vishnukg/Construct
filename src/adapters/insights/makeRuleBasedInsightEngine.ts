@@ -19,35 +19,43 @@ const getRatio = (metric: Devmetric) =>
     ? metric.value / metric.target
     : metric.target / metric.value;
 
-const makeRuleBasedInsightEngine = (): InsightEngine => ({
-  summarize: async (metrics) => {
-    const insights = metrics.flatMap((metric) => {
-      const ratio = getRatio(metric);
+const makeMetricInsight = (metric: Devmetric): Insight[] => {
+  const ratio = getRatio(metric);
 
-      if (ratio > 1.25) {
-        return [makeRiskInsight(metric)];
-      }
+  if (ratio > 1.25) {
+    return [makeRiskInsight(metric)];
+  }
 
-      if (ratio > 1) {
-        return [makeWatchInsight(metric)];
-      }
+  if (ratio > 1) {
+    return [makeWatchInsight(metric)];
+  }
 
-      return [];
-    });
+  return [];
+};
+
+const getMetricId = (metric: Devmetric) => metric.id;
+
+const makeHealthyInsight = (metrics: Devmetric[]): Insight => ({
+  title: "Flow looks healthy",
+  detail: "All tracked metrics are within their current targets.",
+  severity: "info",
+  relatedMetricIds: metrics.map(getMetricId),
+});
+
+const makeRuleBasedInsightEngine = (): InsightEngine => {
+  const summarizeMetrics = async (metrics: Devmetric[]) => {
+    const insights = metrics.flatMap(makeMetricInsight);
 
     if (insights.length > 0) {
       return insights;
     }
 
-    return [
-      {
-        title: "Flow looks healthy",
-        detail: "All tracked metrics are within their current targets.",
-        severity: "info",
-        relatedMetricIds: metrics.map((metric) => metric.id),
-      },
-    ];
-  },
-});
+    return [makeHealthyInsight(metrics)];
+  };
+
+  return {
+    summarize: summarizeMetrics,
+  };
+};
 
 export default makeRuleBasedInsightEngine;

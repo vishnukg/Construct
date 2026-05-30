@@ -1,7 +1,7 @@
-import type { DevmetricsSource } from "../../core/index.ts";
+import type { Devmetric, DevmetricsSource } from "../../core/index.ts";
 
-const makeSampleDevmetricsSource = (): DevmetricsSource => ({
-  listMetrics: async () => [
+const makeSampleDevmetricsSource = (): DevmetricsSource => {
+  const listSampleMetrics = async (): Promise<Devmetric[]> => [
     {
       id: "dlt",
       label: "Delivery lead time",
@@ -47,7 +47,11 @@ const makeSampleDevmetricsSource = (): DevmetricsSource => ({
       trend: "down",
       lowerIsBetter: true,
     },
-  ],
-});
+  ];
+
+  return {
+    listMetrics: listSampleMetrics,
+  };
+};
 
 export default makeSampleDevmetricsSource;
