@@ -1,5 +1,5 @@
-import type { DeveloperMetric, Insight } from "../domain/developerMetrics/types.ts";
+import type { Devmetric, Insight } from "../domain/devmetrics/types.ts";
 
 export interface InsightEngine {
-    summarize: (metrics: DeveloperMetric[]) => Promise<Insight[]>;
+  summarize: (metrics: Devmetric[]) => Promise<Insight[]>;
 }

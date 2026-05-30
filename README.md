@@ -1,12 +1,12 @@
 # Construct
 
-Construct is a terminal workspace for developer workflow metrics, project bootstrapping, and engineering flow intelligence.
+Construct is a terminal workspace for devmetrics, project bootstrapping, and engineering flow intelligence.
 
 The first slice is intentionally small: it renders sample metrics for delivery lead time, PR wait time, review time, code size, and deployment time. The code is shaped around ports and factory functions so GitHub, deployment, and AI providers can be added without pushing those concerns into the core.
 
 ## Name
 
-`construct` is inspired by the Matrix training environment: a loaded workspace where useful programs, signals, and workflows can appear on demand. That maps well to a CLI that starts with developer metrics and can grow into project bootstrapping and other engineering tools.
+`construct` is inspired by the Matrix training environment: a loaded workspace where useful programs, signals, and workflows can appear on demand. That maps well to a CLI that starts with devmetrics and can grow into project bootstrapping and other engineering tools.
 
 ## Run
 
@@ -31,7 +31,7 @@ Common targets:
 
 - `make install` installs npm dependencies from `package-lock.json` inside the container.
 - `make update-deps` intentionally updates dependencies and `package-lock.json`.
-- `make cli` runs the TUI.
+- `make cli` prints the devmetrics report.
 - `make all` runs install, typecheck, lint, test, and build.
 - `make shell` opens a shell in the app container.
 - `make clean` removes Compose-managed containers, networks, and volumes.
@@ -44,7 +44,7 @@ Near-term integrations:
 - Deployment adapters from GitHub Actions first, then provider-specific APIs if needed.
 - AI insight adapter that summarizes bottlenecks, spots anomalies, and recommends the next metric to inspect.
 
-The initial AI boundary is a local rules-based insight engine. That gives the TUI real behavior now while leaving the provider choice open.
+The initial AI boundary is a local rules-based insight engine. That gives the CLI real behavior now while leaving the provider choice open.
 
 ## Docs
 

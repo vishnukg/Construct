@@ -6,7 +6,7 @@ Construct follows the same functional, ports-and-adapters style as the ModulePat
 
 - Keep domain logic independent from GitHub, AI providers, terminal rendering, and deployment APIs.
 - Compose concrete adapters at the edge of the app.
-- Make the first TUI useful with sample data while leaving clear seams for real integrations.
+- Make the first CLI report useful with sample data while leaving clear seams for real integrations.
 - Keep tests focused on core behavior and adapter contracts.
 
 ## Current Shape
@@ -14,25 +14,25 @@ Construct follows the same functional, ports-and-adapters style as the ModulePat
 ```text
 src/
   core/
-    domain/developerMetrics/  pure report-building logic and types
+    domain/devmetrics/  pure report-building logic and types
     ports/                    interfaces for external capabilities
   adapters/
-    developerMetrics/         sample metrics source today; GitHub source later
+    devmetrics/         sample metrics source today; GitHub source later
     insights/                 rules-based insight engine today; AI engine later
     logger/                   console logger
   cli/
-    components/               Ink React terminal UI
     compose.ts                CLI composition root
-    index.tsx                 executable entrypoint
+    formatReport.ts           plain terminal report formatting
+    index.ts                  executable entrypoint
 ```
 
 ## Core
 
-The core owns developer metric types and report construction.
+The core owns devmetric types and report construction.
 
-- `DeveloperMetricsSource` loads raw metrics.
+- `DevmetricsSource` loads raw metrics.
 - `InsightEngine` summarizes those metrics into user-facing insights.
-- `makeDeveloperMetrics` returns the report use case.
+- `makeDevmetrics` returns the report use case.
 
 The core does not know whether metrics came from GitHub, local git history, CI systems, or static sample data.
 
@@ -40,16 +40,16 @@ The core does not know whether metrics came from GitHub, local git history, CI s
 
 Adapters implement ports:
 
-- `makeSampleDeveloperMetricsSource` provides deterministic sample data for early TUI work.
+- `makeSampleDevmetricsSource` provides deterministic sample data for early CLI work.
 - `makeRuleBasedInsightEngine` provides simple local intelligence while we decide which AI capabilities are actually valuable.
-- Future GitHub adapters should live under `src/adapters/github/` and implement `DeveloperMetricsSource`.
+- Future GitHub adapters should live under `src/adapters/github/` and implement `DevmetricsSource`.
 - Future AI adapters should implement `InsightEngine` without changing the report use case.
 
 ## CLI
 
-The CLI is an edge adapter. It composes the core use case and renders the report with Ink.
+The CLI is an edge adapter. It composes the core use case and prints a plain terminal report.
 
-`src/cli/compose.ts` is the composition root for CLI dependencies. Keep provider setup there or behind small adapter factories so the React components remain mostly presentational.
+`src/cli/compose.ts` is the composition root for CLI dependencies. Keep provider setup there or behind small adapter factories so report formatting stays presentational.
 
 ## AI Direction
 

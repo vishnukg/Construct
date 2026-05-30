@@ -1,6 +1,6 @@
 # Construct Docs
 
-These docs capture the architectural decisions and implementation notes for Construct as it grows from a developer metrics TUI into a broader engineering workspace.
+These docs capture the architectural decisions and implementation notes for Construct as it grows from a devmetrics CLI into a broader engineering workspace.
 
 Start here:
 

@@ -1,2 +1,2 @@
-export * from "./domain/developerMetrics/index.ts";
+export * from "./domain/devmetrics/index.ts";
 export * from "./ports/index.ts";

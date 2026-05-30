@@ -15,7 +15,6 @@
         "module": "NodeNext",
         "noEmit": true,
         "erasableSyntaxOnly": true,
-        "jsx": "react-jsx",
         "lib": [
             "es2022"
         ]
