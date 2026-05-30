@@ -1,16 +1,20 @@
 #!/usr/bin/env node
-import React from "react";
-import { render } from "ink";
 import composeCliApp from "./compose.ts";
+import formatReport from "./formatReport.ts";
 import makeSampleDeveloperMetricsSource from "../adapters/developerMetrics/makeSampleDeveloperMetricsSource.ts";
 import makeRuleBasedInsightEngine from "../adapters/insights/makeRuleBasedInsightEngine.ts";
-import consoleLogger from "../adapters/logger/consoleLogger.ts";
-import App from "./components/App.tsx";
+import makeNoOpLogger from "../adapters/logger/makeNoOpLogger.ts";
 
 const app = composeCliApp({
     source: makeSampleDeveloperMetricsSource(),
     insightEngine: makeRuleBasedInsightEngine(),
-    logger: consoleLogger,
+    logger: makeNoOpLogger(),
 });
 
-render(<App getReport={app.getReport} />);
+try {
+    const report = await app.getReport();
+    console.log(formatReport(report));
+} catch (caught) {
+    console.error(caught instanceof Error ? caught.message : "Failed to load metrics");
+    process.exitCode = 1;
+}
