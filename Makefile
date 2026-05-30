@@ -17,8 +17,9 @@ help: ## Show available targets
 install: ## Install dependencies from package-lock.json inside the app container
 	$(RUN) npm ci
 
-update-deps: ## Update dependencies and package-lock.json inside the app container
+update-deps: ## Update dependencies and package-lock.json inside the app container, then sync local node_modules
 	$(RUN) npm install
+	npm install
 
 cli: ## Run the Construct TUI
 	$(RUN) npm run cli

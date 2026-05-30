@@ -6,7 +6,7 @@ import type {
 } from "../app/core/index.ts";
 import makeSampleDevmetricsSource from "../app/adapters/devmetrics/makeSampleDevmetricsSource.ts";
 import makeRuleBasedInsightEngine from "../app/adapters/insights/makeRuleBasedInsightEngine.ts";
-import makeNoOpLogger from "../app/adapters/logger/makeNoOpLogger.ts";
+import consoleLogger from "../app/adapters/logger/consoleLogger.ts";
 
 type CliAppCfg = {
   source: DevmetricsSource;
@@ -17,7 +17,7 @@ type CliAppCfg = {
 const makeDefaultCliAppCfg = (): CliAppCfg => ({
   source: makeSampleDevmetricsSource(),
   insightEngine: makeRuleBasedInsightEngine(),
-  logger: makeNoOpLogger(),
+  logger: consoleLogger,
 });
 
 const composeCliApp = (cfg: CliAppCfg = makeDefaultCliAppCfg()) => {

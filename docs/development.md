@@ -52,6 +52,6 @@ make all
 The Compose service passes these through when present:
 
 - `GITHUB_TOKEN`
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY` (reserved for the future AI insight adapter)
 
 Do not commit secrets. Local environment files are ignored by `.gitignore`.

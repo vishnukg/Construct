@@ -2,7 +2,9 @@ import type { Devmetric, Insight, InsightEngine } from "../../core/index.ts";
 
 const makeRiskInsight = (metric: Devmetric): Insight => ({
   title: `${metric.label} needs attention`,
-  detail: `${metric.value} ${metric.unit} is above the target of ${metric.target} ${metric.unit}.`,
+  detail: metric.lowerIsBetter
+    ? `${metric.value} ${metric.unit} is above the target of ${metric.target} ${metric.unit}.`
+    : `${metric.value} ${metric.unit} is below the target of ${metric.target} ${metric.unit}.`,
   severity: "critical",
   relatedMetricIds: [metric.id],
 });
@@ -14,10 +16,14 @@ const makeWatchInsight = (metric: Devmetric): Insight => ({
   relatedMetricIds: [metric.id],
 });
 
-const getRatio = (metric: Devmetric) =>
-  metric.lowerIsBetter
+const getRatio = (metric: Devmetric) => {
+  if (metric.target === 0) {
+    return metric.value === 0 ? 1 : 2;
+  }
+  return metric.lowerIsBetter
     ? metric.value / metric.target
     : metric.target / metric.value;
+};
 
 const makeMetricInsight = (metric: Devmetric): Insight[] => {
   const ratio = getRatio(metric);
