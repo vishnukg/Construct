@@ -1,7 +1,4 @@
 import "./styles.css";
-import makeSampleDevmetricsSource from "../app/adapters/devmetrics/makeSampleDevmetricsSource.ts";
-import makeRuleBasedInsightEngine from "../app/adapters/insights/makeRuleBasedInsightEngine.ts";
-import makeNoOpLogger from "../app/adapters/logger/makeNoOpLogger.ts";
 import composeUiApp from "./compose.ts";
 import renderReport from "./renderReport.ts";
 
@@ -11,11 +8,7 @@ if (!appRoot) {
   throw new Error("Missing #app root");
 }
 
-const app = composeUiApp({
-  source: makeSampleDevmetricsSource(),
-  insightEngine: makeRuleBasedInsightEngine(),
-  logger: makeNoOpLogger(),
-});
+const app = composeUiApp();
 
 const renderApp = async () => {
   appRoot.dataset.state = "loading";

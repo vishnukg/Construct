@@ -60,22 +60,25 @@ It does this:
 
 ```text
 import CSS
-create the UI app
+create the UI app from src/ui/compose.ts
 load the report
 render the report into #app
 handle loading/error states
 ```
 
 The entrypoint should stay small.
-It should coordinate startup, not contain layout details or business logic.
+It should coordinate startup, not contain layout details, business logic, or concrete adapter setup.
 
 ## Compose
 
 `src/ui/compose.ts` is the UI composition root.
 
-It wires the shared app use case:
+It builds the default browser dependencies, wires the shared app use case, and returns the UI app surface:
 
 ```ts
+const source = makeSampleDevmetricsSource();
+const insightEngine = makeRuleBasedInsightEngine();
+const logger = makeNoOpLogger();
 const getReport = makeDevmetrics({ source, insightEngine, logger });
 
 return { getReport };

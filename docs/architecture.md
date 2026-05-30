@@ -56,7 +56,9 @@ Adapters implement ports:
 
 The CLI is an edge adapter. It composes the core use case and prints a plain terminal report.
 
-`src/cli/compose.ts` is the composition root for CLI dependencies. Keep provider setup there or behind small adapter factories so report formatting stays presentational.
+`src/cli/compose.ts` is the composition root for CLI dependencies.
+It owns the default adapter wiring for the CLI and returns the CLI app surface.
+Keep provider setup there or behind small adapter factories so report formatting stays presentational.
 
 ## UI
 
@@ -64,6 +66,7 @@ The UI is a separate browser entrypoint built with Vite and vanilla TypeScript.
 It reuses the same core use case and current adapters as the CLI, then renders the report into DOM elements instead of terminal text.
 
 `src/ui/compose.ts` is the composition root for browser dependencies.
+It owns the default adapter wiring for the browser UI and returns the UI app surface.
 The UI build can be deployed separately from the CLI because Vite emits static browser assets while the CLI build emits a Node executable.
 
 ## AI Direction

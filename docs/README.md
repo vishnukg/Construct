@@ -5,6 +5,7 @@ These docs capture the architectural decisions and implementation notes for Cons
 Start here:
 
 - [Architecture](./architecture.md)
+- [Code Style](./code-style.md)
 - [UI Primer](./ui-primer.md)
 - [Development Workflow](./development.md)
 - [Dependency Policy](./dependency-policy.md)
