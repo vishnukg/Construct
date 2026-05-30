@@ -31,4 +31,4 @@ const renderApp = async () => {
   }
 };
 
-await renderApp();
+void renderApp();

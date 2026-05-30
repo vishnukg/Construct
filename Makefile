@@ -3,6 +3,7 @@ SHELL := /bin/bash
 DOCKER_COMPOSE ?= docker compose
 SERVICE ?= app
 RUN := $(DOCKER_COMPOSE) run --rm $(SERVICE)
+RUN_WITH_SERVICE_PORTS := $(DOCKER_COMPOSE) run --rm --service-ports $(SERVICE)
 
 .DEFAULT_GOAL := help
 
@@ -23,7 +24,7 @@ cli: ## Run the Construct TUI
 	$(RUN) npm run cli
 
 ui: ## Run the Construct web UI
-	$(RUN) npm run ui
+	$(RUN_WITH_SERVICE_PORTS) npm run ui
 
 ui-build: ## Build the Construct web UI
 	$(RUN) npm run ui:build
