@@ -29,7 +29,8 @@ Construct follows the 3 Musketeers pattern: `make` is the command interface, Doc
 
 Common targets:
 
-- `make install` installs npm dependencies inside the container and writes `package-lock.json`.
+- `make install` installs npm dependencies from `package-lock.json` inside the container.
+- `make update-deps` intentionally updates dependencies and `package-lock.json`.
 - `make cli` runs the TUI.
 - `make all` runs install, typecheck, lint, test, and build.
 - `make shell` opens a shell in the app container.
@@ -44,3 +45,7 @@ Near-term integrations:
 - AI insight adapter that summarizes bottlenecks, spots anomalies, and recommends the next metric to inspect.
 
 The initial AI boundary is a local rules-based insight engine. That gives the TUI real behavior now while leaving the provider choice open.
+
+## Docs
+
+Architecture and implementation notes live in [docs](./docs/README.md).

@@ -6,14 +6,17 @@ RUN := $(DOCKER_COMPOSE) run --rm $(SERVICE)
 
 .DEFAULT_GOAL := help
 
-.PHONY: all help install cli typecheck test lint format format-check build shell clean compose-config
+.PHONY: all help install update-deps cli typecheck test lint format format-check build shell clean compose-config
 
 all: install typecheck lint test build ## Run the local verification pipeline
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"; printf "\nConstruct targets:\n"} /^[a-zA-Z_-]+:.*?##/ {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install: ## Install dependencies inside the app container
+install: ## Install dependencies from package-lock.json inside the app container
+	$(RUN) npm ci
+
+update-deps: ## Update dependencies and package-lock.json inside the app container
 	$(RUN) npm install
 
 cli: ## Run the Construct TUI
