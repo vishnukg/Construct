@@ -7,7 +7,7 @@ RUN_WITH_SERVICE_PORTS := $(DOCKER_COMPOSE) run --rm --service-ports $(SERVICE)
 
 .DEFAULT_GOAL := help
 
-.PHONY: all help install update-deps cli ui ui-build typecheck test lint format format-check build shell clean compose-config
+.PHONY: all help install update-deps cli ui ui-build typecheck test lint security-audit format format-check build shell clean compose-config
 
 all: install typecheck lint test build ## Run the local verification pipeline
 
@@ -37,6 +37,9 @@ test: ## Run tests with coverage
 
 lint: ## Run ESLint
 	$(RUN) npm run lint
+
+security-audit: ## Run npm security audit
+	$(RUN) npm run security:audit
 
 format: ## Format the repository
 	$(RUN) npm run format

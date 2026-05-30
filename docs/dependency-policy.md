@@ -49,3 +49,42 @@ Only approve packages when the install script is expected and the package is a n
 - Use `npm ci` for repeatable installs.
 - Use `npm install` only when intentionally updating dependencies.
 - Run `make all` after dependency changes.
+
+## Security Checks
+
+Run the npm advisory audit before merging dependency changes:
+
+```sh
+make security-audit
+```
+
+This runs:
+
+```sh
+npm audit --audit-level=moderate
+```
+
+`npm audit` is the baseline scanner for this repo because Construct uses npm and commits `package-lock.json`.
+It checks the resolved dependency tree in the lockfile against npm security advisories.
+
+For GitHub-hosted repositories, also enable Dependabot alerts and security update pull requests.
+Dependabot provides continuous monitoring, while `make security-audit` gives a local and CI-friendly check.
+
+If Construct later becomes multi-ecosystem or starts shipping container images, add a second scanner instead of replacing `npm audit`:
+
+- OSV-Scanner for ecosystem-neutral lockfile and source scanning.
+- Trivy or similar image scanning for container artifacts.
+
+## Runtime Versions
+
+Use supported Node.js LTS releases for runtime images.
+Production images should avoid odd-numbered Current releases because they have a shorter support window.
+
+Construct currently uses:
+
+```text
+node:24-bookworm-slim
+```
+
+Node 24 is the current LTS line, so it is the right default for this project.
+When a newer even-numbered Node release becomes LTS, update the Docker image in a planned dependency update.

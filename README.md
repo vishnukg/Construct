@@ -20,6 +20,7 @@ make cli
 ```sh
 make typecheck
 make test
+make security-audit
 make build
 make ui
 ```
@@ -35,6 +36,7 @@ Common targets:
 - `make cli` prints the devmetrics report.
 - `make ui` starts the browser dashboard at `http://localhost:5173`.
 - `make ui-build` builds the browser dashboard as static assets.
+- `make security-audit` checks npm dependencies for known vulnerabilities.
 - `make all` runs install, typecheck, lint, test, and build.
 - `make shell` opens a shell in the app container.
 - `make clean` removes Compose-managed containers, networks, and volumes.

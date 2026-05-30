@@ -23,6 +23,7 @@ make install
 make cli
 make typecheck
 make lint
+make security-audit
 make test
 make build
 make all

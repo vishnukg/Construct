@@ -231,6 +231,7 @@ Before committing, run:
 npm run format:check
 npm run typecheck
 npm run lint
+npm run security:audit
 npm test
 npm run build
 npm run ui:build
