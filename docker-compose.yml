@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+    environment:
+      CI: ${CI:-false}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    stdin_open: true
+    tty: true
+
+volumes:
+  node_modules:
