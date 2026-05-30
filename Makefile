@@ -6,7 +6,7 @@ RUN := $(DOCKER_COMPOSE) run --rm $(SERVICE)
 
 .DEFAULT_GOAL := help
 
-.PHONY: all help install update-deps cli typecheck test lint format format-check build shell clean compose-config
+.PHONY: all help install update-deps cli ui ui-build typecheck test lint format format-check build shell clean compose-config
 
 all: install typecheck lint test build ## Run the local verification pipeline
 
@@ -21,6 +21,12 @@ update-deps: ## Update dependencies and package-lock.json inside the app contain
 
 cli: ## Run the Construct TUI
 	$(RUN) npm run cli
+
+ui: ## Run the Construct web UI
+	$(RUN) npm run ui
+
+ui-build: ## Build the Construct web UI
+	$(RUN) npm run ui:build
 
 typecheck: ## Run TypeScript checks
 	$(RUN) npm run typecheck

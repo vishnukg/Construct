@@ -5,6 +5,7 @@ These docs capture the architectural decisions and implementation notes for Cons
 Start here:
 
 - [Architecture](./architecture.md)
+- [UI Primer](./ui-primer.md)
 - [Development Workflow](./development.md)
 - [Dependency Policy](./dependency-policy.md)
 - [ADR 0001: Package Manager](./adr/0001-package-manager.md)

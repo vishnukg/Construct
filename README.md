@@ -21,6 +21,7 @@ make cli
 make typecheck
 make test
 make build
+make ui
 ```
 
 ## Container Workflow
@@ -32,6 +33,8 @@ Common targets:
 - `make install` installs npm dependencies from `package-lock.json` inside the container.
 - `make update-deps` intentionally updates dependencies and `package-lock.json`.
 - `make cli` prints the devmetrics report.
+- `make ui` starts the browser dashboard at `http://localhost:5173`.
+- `make ui-build` builds the browser dashboard as static assets.
 - `make all` runs install, typecheck, lint, test, and build.
 - `make shell` opens a shell in the app container.
 - `make clean` removes Compose-managed containers, networks, and volumes.

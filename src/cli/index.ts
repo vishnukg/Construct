@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import composeCliApp from "./compose.ts";
 import formatReport from "./formatReport.ts";
-import makeSampleDevmetricsSource from "../adapters/devmetrics/makeSampleDevmetricsSource.ts";
-import makeRuleBasedInsightEngine from "../adapters/insights/makeRuleBasedInsightEngine.ts";
-import makeNoOpLogger from "../adapters/logger/makeNoOpLogger.ts";
+import makeSampleDevmetricsSource from "../app/adapters/devmetrics/makeSampleDevmetricsSource.ts";
+import makeRuleBasedInsightEngine from "../app/adapters/insights/makeRuleBasedInsightEngine.ts";
+import makeNoOpLogger from "../app/adapters/logger/makeNoOpLogger.ts";
 
 const app = composeCliApp({
   source: makeSampleDevmetricsSource(),

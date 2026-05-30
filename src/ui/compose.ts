@@ -1,20 +1,20 @@
 import { makeDevmetrics } from "../app/core/index.ts";
 import type {
-  Logger,
   DevmetricsSource,
   InsightEngine,
+  Logger,
 } from "../app/core/index.ts";
 
-type CliAppCfg = {
+type UiAppCfg = {
   source: DevmetricsSource;
   insightEngine: InsightEngine;
   logger: Logger;
 };
 
-const composeCliApp = ({ source, insightEngine, logger }: CliAppCfg) => {
+const composeUiApp = ({ source, insightEngine, logger }: UiAppCfg) => {
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 
   return { getReport };
 };
 
-export default composeCliApp;
+export default composeUiApp;

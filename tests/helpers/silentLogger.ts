@@ -1,9 +1,9 @@
-import type { Logger } from "../../src/core/index.ts";
+import type { Logger } from "../../src/app/core/index.ts";
 
 const silentLogger: Logger = {
-    info: () => {},
-    warn: () => {},
-    error: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
 };
 
 export default silentLogger;

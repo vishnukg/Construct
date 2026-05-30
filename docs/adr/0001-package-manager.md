@@ -6,7 +6,7 @@ Accepted.
 
 ## Context
 
-Construct is a TypeScript CLI project that currently uses Node, npm, Vitest, ESLint, and tsup. The project also follows a container-first workflow, so the package manager runs inside Docker through Make targets.
+Construct is a TypeScript CLI project that currently uses Node, npm, Vitest, ESLint, and tsdown. The project also follows a container-first workflow, so the package manager runs inside Docker through Make targets.
 
 We considered whether Yarn would be better than npm.
 

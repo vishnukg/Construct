@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeDevmetrics } from "../src/core/index.ts";
-import type { DevmetricsSource, InsightEngine } from "../src/core/index.ts";
+import { makeDevmetrics } from "../src/app/core/index.ts";
+import type { DevmetricsSource, InsightEngine } from "../src/app/core/index.ts";
 import silentLogger from "./helpers/silentLogger.ts";
 
 describe("devmetrics report", () => {

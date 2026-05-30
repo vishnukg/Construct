@@ -2,7 +2,7 @@ import type {
   DevmetricsReport,
   InsightSeverity,
   MetricStatus,
-} from "../core/index.ts";
+} from "../app/core/index.ts";
 
 const statusLabel: Record<MetricStatus, string> = {
   good: "GOOD",
