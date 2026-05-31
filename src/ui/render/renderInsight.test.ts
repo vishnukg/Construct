@@ -1,89 +1,35 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it } from "vitest";
+import { expect, test } from "vitest";
 import renderInsight from "./renderInsight.ts";
 import { makeTestInsight } from "./testFixtures.ts";
 
-describe("renderInsight", () => {
-  describe("given an insight with 'info' severity", () => {
-    it("when rendered, then the element has the insight-info modifier class", () => {
-      // Arrange
-      const insight = makeTestInsight({ severity: "info" });
+test("applies insight-info class for info severity", () => {
+  expect(renderInsight(makeTestInsight({ severity: "info" })).className).toContain("insight-info");
+});
 
-      // Act
-      const el = renderInsight(insight);
+test("applies insight-warning class for warning severity", () => {
+  expect(renderInsight(makeTestInsight({ severity: "warning" })).className).toContain("insight-warning");
+});
 
-      // Assert
-      expect(el.className).toContain("insight-info");
-    });
-  });
+test("applies insight-critical class for critical severity", () => {
+  expect(renderInsight(makeTestInsight({ severity: "critical" })).className).toContain("insight-critical");
+});
 
-  describe("given an insight with 'warning' severity", () => {
-    it("when rendered, then the element has the insight-warning modifier class", () => {
-      // Arrange
-      const insight = makeTestInsight({ severity: "warning" });
+test("displays the title and detail text", () => {
+  const el = renderInsight(makeTestInsight({
+    title: "High cycle time",
+    detail: "Exceeds target by 3 days.",
+  }));
 
-      // Act
-      const el = renderInsight(insight);
+  expect(el.textContent).toContain("High cycle time");
+  expect(el.textContent).toContain("Exceeds target by 3 days.");
+});
 
-      // Assert
-      expect(el.className).toContain("insight-warning");
-    });
-  });
+test("displays 'Warning' in the severity badge", () => {
+  expect(renderInsight(makeTestInsight({ severity: "warning" })).querySelector(".insight-severity")?.textContent).toBe("Warning");
+});
 
-  describe("given an insight with 'critical' severity", () => {
-    it("when rendered, then the element has the insight-critical modifier class", () => {
-      // Arrange
-      const insight = makeTestInsight({ severity: "critical" });
-
-      // Act
-      const el = renderInsight(insight);
-
-      // Assert
-      expect(el.className).toContain("insight-critical");
-    });
-  });
-
-  describe("given an insight with a title and detail", () => {
-    it("when rendered, then both the title and detail text are present in the element", () => {
-      // Arrange
-      const insight = makeTestInsight({
-        title: "High cycle time",
-        detail: "Exceeds target by 3 days.",
-      });
-
-      // Act
-      const el = renderInsight(insight);
-
-      // Assert
-      expect(el.textContent).toContain("High cycle time");
-      expect(el.textContent).toContain("Exceeds target by 3 days.");
-    });
-  });
-
-  describe("given an insight with 'warning' severity", () => {
-    it("when rendered, then the severity badge displays 'Warning'", () => {
-      // Arrange
-      const insight = makeTestInsight({ severity: "warning" });
-
-      // Act
-      const el = renderInsight(insight);
-
-      // Assert
-      expect(el.querySelector(".insight-severity")?.textContent).toBe("Warning");
-    });
-  });
-
-  describe("given an insight with 'critical' severity", () => {
-    it("when rendered, then the severity badge displays 'Critical'", () => {
-      // Arrange
-      const insight = makeTestInsight({ severity: "critical" });
-
-      // Act
-      const el = renderInsight(insight);
-
-      // Assert
-      expect(el.querySelector(".insight-severity")?.textContent).toBe("Critical");
-    });
-  });
+test("displays 'Critical' in the severity badge", () => {
+  expect(renderInsight(makeTestInsight({ severity: "critical" })).querySelector(".insight-severity")?.textContent).toBe("Critical");
 });

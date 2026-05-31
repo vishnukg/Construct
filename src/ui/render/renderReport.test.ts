@@ -1,85 +1,48 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 import renderReport from "./renderReport.ts";
 import { makeTestInsight, makeTestMetric, makeTestReport } from "./testFixtures.ts";
 
-describe("renderReport", () => {
-  describe("given a report with two metrics", () => {
-    it("when rendered, then one metric card is created per metric", () => {
-      // Arrange
-      const report = makeTestReport({
-        metrics: [makeTestMetric(), makeTestMetric()],
-        insights: [],
-      });
-      const root = document.createElement("div");
+test("creates one metric card per metric", () => {
+  const root = document.createElement("div");
 
-      // Act
-      renderReport(root, report, () => {});
+  renderReport(root, makeTestReport({ metrics: [makeTestMetric(), makeTestMetric()], insights: [] }), () => {});
 
-      // Assert
-      expect(root.querySelectorAll(".metric")).toHaveLength(2);
-    });
-  });
+  expect(root.querySelectorAll(".metric")).toHaveLength(2);
+});
 
-  describe("given a report with two insights", () => {
-    it("when rendered, then one insight entry is created per insight", () => {
-      // Arrange
-      const report = makeTestReport({
-        metrics: [],
-        insights: [makeTestInsight(), makeTestInsight()],
-      });
-      const root = document.createElement("div");
+test("creates one insight entry per insight", () => {
+  const root = document.createElement("div");
 
-      // Act
-      renderReport(root, report, () => {});
+  renderReport(root, makeTestReport({ metrics: [], insights: [makeTestInsight(), makeTestInsight()] }), () => {});
 
-      // Assert
-      expect(root.querySelectorAll(".insight")).toHaveLength(2);
-    });
-  });
+  expect(root.querySelectorAll(".insight")).toHaveLength(2);
+});
 
-  describe("given a root element that already contains content", () => {
-    it("when rendered, then the previous content is replaced", () => {
-      // Arrange
-      const report = makeTestReport({ metrics: [makeTestMetric()], insights: [] });
-      const root = document.createElement("div");
-      root.innerHTML = "<p class='stale'>old content</p>";
+test("replaces existing root content on render", () => {
+  const root = document.createElement("div");
+  root.innerHTML = "<p class='stale'>old content</p>";
 
-      // Act
-      renderReport(root, report, () => {});
+  renderReport(root, makeTestReport({ metrics: [makeTestMetric()], insights: [] }), () => {});
 
-      // Assert
-      expect(root.querySelector(".stale")).toBeNull();
-    });
-  });
+  expect(root.querySelector(".stale")).toBeNull();
+});
 
-  describe("given an onRefresh callback", () => {
-    it("when the refresh button is clicked, then the callback is called once", () => {
-      // Arrange
-      const report = makeTestReport();
-      const root = document.createElement("div");
-      const onRefresh = vi.fn();
+test("calls the refresh callback when the refresh button is clicked", () => {
+  const root = document.createElement("div");
+  const onRefresh = vi.fn();
 
-      // Act
-      renderReport(root, report, onRefresh);
-      root.querySelector<HTMLButtonElement>(".refresh-button")?.click();
+  renderReport(root, makeTestReport(), onRefresh);
+  root.querySelector<HTMLButtonElement>(".refresh-button")?.click();
 
-      // Assert
-      expect(onRefresh).toHaveBeenCalledOnce();
-    });
-  });
+  expect(onRefresh).toHaveBeenCalledOnce();
+});
 
-  describe("given any report", () => {
-    it("when rendered, then the page title 'Construct' is visible", () => {
-      // Arrange
-      const root = document.createElement("div");
+test("displays the Construct title", () => {
+  const root = document.createElement("div");
 
-      // Act
-      renderReport(root, makeTestReport(), () => {});
+  renderReport(root, makeTestReport(), () => {});
 
-      // Assert
-      expect(root.textContent).toContain("Construct");
-    });
-  });
+  expect(root.textContent).toContain("Construct");
 });

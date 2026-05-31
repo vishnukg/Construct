@@ -4,117 +4,70 @@ import { describe, expect, it } from "vitest";
 import { appendChildren, createElement } from "./dom.ts";
 
 describe("createElement", () => {
-  describe("given a tag name with no optional arguments", () => {
-    it("when called, then it creates an element of that type with no class or text", () => {
-      // Arrange (none)
+  it("creates an element of the given tag with no class or text by default", () => {
+    const element = createElement("div");
 
-      // Act
-      const element = createElement("div");
-
-      // Assert
-      expect(element.tagName).toBe("DIV");
-      expect(element.className).toBe("");
-      expect(element.textContent).toBe("");
-    });
+    expect(element.tagName).toBe("DIV");
+    expect(element.className).toBe("");
+    expect(element.textContent).toBe("");
   });
 
-  describe("given a tag name and a class name", () => {
-    it("when called, then the element has that class name", () => {
-      // Arrange (none)
+  it("sets the class name when provided", () => {
+    const element = createElement("p", "my-class");
 
-      // Act
-      const element = createElement("p", "my-class");
-
-      // Assert
-      expect(element.className).toBe("my-class");
-    });
+    expect(element.className).toBe("my-class");
   });
 
-  describe("given a tag name and text content", () => {
-    it("when called, then the element has that text content", () => {
-      // Arrange (none)
+  it("sets the text content when provided", () => {
+    const element = createElement("span", undefined, "Hello");
 
-      // Act
-      const element = createElement("span", undefined, "Hello");
-
-      // Assert
-      expect(element.textContent).toBe("Hello");
-    });
+    expect(element.textContent).toBe("Hello");
   });
 
-  describe("given a tag name, class name, and text content", () => {
-    it("when called, then the element has both the class name and the text content", () => {
-      // Arrange (none)
+  it("sets both class name and text content when both are provided", () => {
+    const element = createElement("h1", "title", "Construct");
 
-      // Act
-      const element = createElement("h1", "title", "Construct");
-
-      // Assert
-      expect(element.className).toBe("title");
-      expect(element.textContent).toBe("Construct");
-    });
+    expect(element.className).toBe("title");
+    expect(element.textContent).toBe("Construct");
   });
 
-  describe("given an article tag name", () => {
-    it("when called, then it returns an HTMLElement typed to that tag", () => {
-      // Arrange (none)
+  it("returns an element typed to the given tag", () => {
+    const element = createElement("article", "metric");
 
-      // Act
-      const element = createElement("article", "metric");
-
-      // Assert
-      expect(element.tagName).toBe("ARTICLE");
-      expect(element.className).toBe("metric");
-    });
+    expect(element.tagName).toBe("ARTICLE");
+    expect(element.className).toBe("metric");
   });
 });
 
 describe("appendChildren", () => {
-  describe("given a parent element and multiple children", () => {
-    it("when called, then all children are appended to the parent in order", () => {
-      // Arrange
-      const parent = createElement("div");
-      const firstChild = createElement("span", undefined, "first");
-      const secondChild = createElement("span", undefined, "second");
+  it("appends all children to the parent in order", () => {
+    const parent = createElement("div");
+    const first = createElement("span", undefined, "first");
+    const second = createElement("span", undefined, "second");
 
-      // Act
-      appendChildren(parent, [firstChild, secondChild]);
+    appendChildren(parent, [first, second]);
 
-      // Assert
-      expect(parent.children).toHaveLength(2);
-      expect(parent.children[0]?.textContent).toBe("first");
-      expect(parent.children[1]?.textContent).toBe("second");
-    });
+    expect(parent.children).toHaveLength(2);
+    expect(parent.children[0]?.textContent).toBe("first");
+    expect(parent.children[1]?.textContent).toBe("second");
   });
 
-  describe("given a parent element and an empty array", () => {
-    it("when called, then the parent remains empty", () => {
-      // Arrange
-      const parent = createElement("div");
+  it("leaves the parent empty when given an empty array", () => {
+    const parent = createElement("div");
 
-      // Act
-      appendChildren(parent, []);
+    appendChildren(parent, []);
 
-      // Assert
-      expect(parent.children).toHaveLength(0);
-    });
+    expect(parent.children).toHaveLength(0);
   });
 
-  describe("given a parent element already containing a child", () => {
-    it("when new children are appended, then existing and new children are all present", () => {
-      // Arrange
-      const parent = createElement("ul");
-      const existingChild = createElement("li", undefined, "existing");
-      parent.append(existingChild);
-      const newChild = createElement("li", undefined, "new");
+  it("appends new children after existing children", () => {
+    const parent = createElement("ul");
+    parent.append(createElement("li", undefined, "existing"));
 
-      // Act
-      appendChildren(parent, [newChild]);
+    appendChildren(parent, [createElement("li", undefined, "new")]);
 
-      // Assert
-      expect(parent.children).toHaveLength(2);
-      expect(parent.children[0]?.textContent).toBe("existing");
-      expect(parent.children[1]?.textContent).toBe("new");
-    });
+    expect(parent.children).toHaveLength(2);
+    expect(parent.children[0]?.textContent).toBe("existing");
+    expect(parent.children[1]?.textContent).toBe("new");
   });
 });
