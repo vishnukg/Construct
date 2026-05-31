@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeDevmetrics } from "../src/app/core/index.ts";
-import type { DevmetricsSource, InsightEngine } from "../src/app/core/index.ts";
-import silentLogger from "./helpers/silentLogger.ts";
+import { makeDevmetrics } from "../../index.ts";
+import type { DevmetricsSource, InsightEngine } from "../../index.ts";
+import makeNoOpLogger from "../../../adapters/logger/makeNoOpLogger.ts";
 
 describe("makeDevmetrics", () => {
   describe("given metrics at different distances from their targets", () => {
@@ -43,7 +43,7 @@ describe("makeDevmetrics", () => {
       const getReport = makeDevmetrics({
         source: stubSource,
         insightEngine: stubInsightEngine,
-        logger: silentLogger,
+        logger: makeNoOpLogger(),
         now: () => new Date("2026-01-01T00:00:00Z"),
       });
 
@@ -78,7 +78,7 @@ describe("makeDevmetrics", () => {
       const getReport = makeDevmetrics({
         source: stubSource,
         insightEngine: mockInsightEngine,
-        logger: silentLogger,
+        logger: makeNoOpLogger(),
       });
 
       // Act

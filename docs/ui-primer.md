@@ -1,11 +1,12 @@
 # UI Primer
 
-This document has four parts:
+This document has five parts:
 
 1. **How browser UIs work** — what HTML, CSS, and JS are and how a browser uses them.
 2. **UI architecture patterns** — how to structure UI code so it stays understandable as it grows.
 3. **Vanilla TypeScript and functional programming for UI** — whether you can build real UIs without a framework.
 4. **How this project's UI is built** — the specific files, patterns, and wiring in Construct.
+5. **Testing the UI** — how to unit test render functions, what tools are involved, and what not to test.
 
 ---
 
@@ -636,3 +637,177 @@ large item lists that update frequently and need surgical DOM updates
 ```
 
 Until then, vanilla TypeScript with functional principles is a complete and appropriate choice.
+
+---
+
+## Part 5: Testing the UI
+
+### The DOM problem
+
+Most unit tests run in Node.js, which has no browser APIs. There is no `document`, no `window`, no `createElement`. If you try to call `renderMetric()` in a plain Node test, it crashes immediately because those APIs don't exist.
+
+The solution is a **DOM simulation** — a JavaScript library that implements browser APIs inside Node.js. This project uses **happy-dom**. It is fast and lightweight, handles the DOM APIs needed for building and querying elements, and integrates directly with Vitest.
+
+To activate it for a test file, add this comment at the very top:
+
+```ts
+// @vitest-environment happy-dom
+```
+
+Vitest sees that comment and initialises a happy-dom environment for that file before any tests run. Files without the comment run in plain Node.
+
+### What happy-dom can and cannot do
+
+happy-dom implements the DOM tree: creating elements, setting classes and text, appending children, querying with `querySelector`. This is all you need to test render functions.
+
+What it does **not** do:
+
+- **Layout and paint** — elements have no computed dimensions or positions. `getBoundingClientRect()` returns zeroes.
+- **Computed styles** — CSS from stylesheets is not applied. A `.metric-risk` element does not turn red. `getComputedStyle()` returns defaults.
+- **Visual correctness** — happy-dom cannot tell you whether the page looks right. That is the job of screenshot testing and manual review.
+
+The practical rule: test structure and content (class names, text, element existence). Do not test visual appearance.
+
+### The three tiers of testability
+
+#### Tier 1: Pure functions — no DOM needed
+
+Some functions in the UI layer take data and return a primitive. They do not touch the DOM at all. Test them exactly like domain logic — no environment comment required.
+
+`formatDelta` and `getProgressPercent` in `renderMetric.ts` are both exported and both purely functional:
+
+```ts
+// No @vitest-environment comment needed — no DOM involved
+describe("formatDelta", () => {
+  describe("given a metric that is exactly on target", () => {
+    it("when called, then it returns 'On target'", () => {
+      const metric = makeTestMetric({ deltaFromTarget: 0 });
+      expect(formatDelta(metric)).toBe("On target");
+    });
+  });
+});
+```
+
+If a function takes data and returns a string or number, it belongs here regardless of which file it lives in.
+
+#### Tier 2: Render functions — need happy-dom
+
+Render functions call `document.createElement`, so they need the environment comment. The test pattern is always the same:
+
+1. **Arrange** — build the input data with a fixture builder
+2. **Act** — call the render function and capture the returned element
+3. **Assert** — query the element and check its structure
+
+```ts
+// @vitest-environment happy-dom
+
+describe("renderInsight", () => {
+  describe("given an insight with 'critical' severity", () => {
+    it("when rendered, then the element has the insight-critical modifier class", () => {
+      // Arrange
+      const insight = makeTestInsight({ severity: "critical" });
+
+      // Act
+      const el = renderInsight(insight);
+
+      // Assert
+      expect(el.className).toContain("insight-critical");
+    });
+  });
+});
+```
+
+The test asks three questions:
+- Does the right element exist? (`querySelector` returning non-null)
+- Does it have the right class? (`el.className`, `.toContain`)
+- Does it show the right text? (`el.textContent`, `querySelector(".x")?.textContent`)
+
+This works cleanly because render functions are pure: same input → same output. There is no state to set up, no async to await, no mocking of external services. The architecture from Part 2 is what makes this straightforward.
+
+#### Tier 3: Orchestration — async boundary and state transitions
+
+`index.ts` owns the async boundary and the loading/error/ready state transitions. Testing it means:
+
+- Stubbing `getReport` with `vi.fn()` to return controlled data or throw
+- Creating a real `#app` element
+- Calling the async render function
+- Asserting on the element's `dataset.state`
+
+This is more involved than a pure render test, but it follows the same AAA structure. The key point is that `index.ts` is the only place where this complexity lives — it has been deliberately pushed there so everything else stays simple.
+
+### Fixture builders
+
+Hard-coding full `MetricSummary` and `Insight` objects in every test is noisy and makes tests brittle when types change. The project uses fixture builders in `tests/helpers/testFixtures.ts`:
+
+```ts
+export const makeTestMetric = (overrides: Partial<MetricSummary> = {}): MetricSummary => ({
+  id: "test-metric",
+  label: "Test Metric",
+  value: 8,
+  unit: "days",
+  target: 10,
+  trend: "flat",
+  lowerIsBetter: true,
+  status: "good",
+  deltaFromTarget: -2,
+  ...overrides,
+});
+```
+
+The function provides sensible defaults for every field. Tests pass only what they care about:
+
+```ts
+// Only the status matters for this test — everything else is irrelevant
+const metric = makeTestMetric({ status: "risk" });
+```
+
+If the `MetricSummary` type gains a new required field, you update `makeTestMetric` in one place and all tests continue to work. Without this, adding a field would require updating every test file that creates metric data.
+
+The same pattern exists for `makeTestInsight` and `makeTestReport`.
+
+### Testing callbacks
+
+The event callback pattern from Part 2 (events bubble up) is directly testable with `vi.fn()`:
+
+```ts
+describe("given an onRefresh callback", () => {
+  it("when the refresh button is clicked, then the callback is called once", () => {
+    // Arrange
+    const onRefresh = vi.fn();
+    const root = document.createElement("div");
+
+    // Act
+    renderReport(root, makeTestReport(), onRefresh);
+    root.querySelector<HTMLButtonElement>(".refresh-button")?.click();
+
+    // Assert
+    expect(onRefresh).toHaveBeenCalledOnce();
+  });
+});
+```
+
+`vi.fn()` creates a spy — a function that records every call made to it. You can then assert how many times it was called, with what arguments, and in what order.
+
+This test verifies that `renderReport` correctly wires the button to the callback. It does not test what the callback does — that belongs in the test for `index.ts`, where the callback is defined.
+
+### What not to test
+
+**Do not test CSS visual outcomes.** Class names confirm that the right CSS hook is present. Whether the badge is actually red is a visual question that requires a real browser or a screenshot tool.
+
+**Do not exhaustively test element structure.** If `renderMetric` creates an `article` element, you do not need a test that asserts `el.tagName === "ARTICLE"`. Test the meaningful behavior: the right class for the right status, the right text for the label and value. Trust `createElement` — it is already tested in `dom.test.ts`.
+
+**Do not test `compose.ts`.** It wires known-good pieces together. The composition is validated by the app running correctly. A unit test here would just duplicate what the other tests already cover.
+
+### Test file map
+
+| Test file | What it covers |
+|---|---|
+| `src/ui/dom.test.ts` | `createElement`, `appendChildren` |
+| `src/ui/renderMetric.test.ts` | `formatDelta`, `getProgressPercent`, `renderMetric` |
+| `src/ui/renderInsight.test.ts` | `renderInsight` |
+| `src/ui/renderSummary.test.ts` | `renderSummary` |
+| `src/ui/renderReport.test.ts` | `renderReport`, refresh callback wiring |
+| `src/app/core/domain/devmetrics/makeDevmetrics.test.ts` | `makeDevmetrics` (core domain) |
+| `src/app/adapters/insights/makeRuleBasedInsightEngine.test.ts` | `makeRuleBasedInsightEngine` (adapter) |
+
+Test fixtures shared across the UI tests live in `src/ui/testFixtures.ts`.

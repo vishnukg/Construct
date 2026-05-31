@@ -21,7 +21,7 @@ export const formatDelta = (metric: MetricSummary): string => {
   }
 
   const direction = metric.deltaFromTarget > 0 ? "over" : "under";
-  return `${delta} ${metric.unit} ${direction}`;
+  return `${+delta.toFixed(2)} ${metric.unit} ${direction}`;
 };
 
 export const getProgressPercent = (metric: MetricSummary): number => {

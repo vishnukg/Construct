@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { describe, expect, it } from "vitest";
-import { appendChildren, createElement } from "../src/ui/dom.ts";
+import { appendChildren, createElement } from "./dom.ts";
 
 describe("createElement", () => {
   describe("given a tag name with no optional arguments", () => {

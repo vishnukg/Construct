@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import makeRuleBasedInsightEngine from "../src/app/adapters/insights/makeRuleBasedInsightEngine.ts";
-import type { Devmetric } from "../src/app/core/index.ts";
+import makeRuleBasedInsightEngine from "./makeRuleBasedInsightEngine.ts";
+import type { Devmetric } from "../../core/index.ts";
 
 describe("makeRuleBasedInsightEngine", () => {
   describe("given a metric more than 25% above its target (lowerIsBetter)", () => {
