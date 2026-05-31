@@ -8,23 +8,23 @@ import makeSampleDevmetricsSource from "../app/adapters/devmetrics/makeSampleDev
 import makeRuleBasedInsightEngine from "../app/adapters/insights/makeRuleBasedInsightEngine.ts";
 import consoleLogger from "../app/adapters/logger/consoleLogger.ts";
 
-type CliAppCfg = {
+type AppCfg = {
   source: DevmetricsSource;
   insightEngine: InsightEngine;
   logger: Logger;
 };
 
-const makeDefaultCliAppCfg = (): CliAppCfg => ({
+const makeDefaultCfg = (): AppCfg => ({
   source: makeSampleDevmetricsSource(),
   insightEngine: makeRuleBasedInsightEngine(),
   logger: consoleLogger,
 });
 
-const composeCliApp = (cfg: CliAppCfg = makeDefaultCliAppCfg()) => {
+const composeApp = (cfg: AppCfg = makeDefaultCfg()) => {
   const { source, insightEngine, logger } = cfg;
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 
   return { getReport };
 };
 
-export default composeCliApp;
+export default composeApp;

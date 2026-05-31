@@ -2,7 +2,7 @@ import type {
   DevmetricsReport,
   Insight,
   MetricSummary,
-} from "../app/core/index.ts";
+} from "../../app/core/index.ts";
 
 export const makeTestMetric = (overrides: Partial<MetricSummary> = {}): MetricSummary => ({
   id: "test-metric",

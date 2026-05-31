@@ -1,4 +1,4 @@
-import type { DevmetricsReport } from "../app/core/index.ts";
+import type { DevmetricsReport } from "../../app/core/index.ts";
 import { appendChildren, createElement } from "./dom.ts";
 import renderInsight from "./renderInsight.ts";
 import renderMetric from "./renderMetric.ts";

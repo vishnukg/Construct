@@ -1,4 +1,4 @@
-import type { DevmetricsReport } from "../app/core/index.ts";
+import type { DevmetricsReport } from "../../app/core/index.ts";
 import { createElement } from "./dom.ts";
 
 const renderSummary = (report: DevmetricsReport): HTMLElement => {

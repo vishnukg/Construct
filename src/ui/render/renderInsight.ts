@@ -1,4 +1,4 @@
-import type { Insight, InsightSeverity } from "../app/core/index.ts";
+import type { Insight, InsightSeverity } from "../../app/core/index.ts";
 import { appendChildren, createElement } from "./dom.ts";
 
 const severityLabel: Record<InsightSeverity, string> = {

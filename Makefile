@@ -34,7 +34,7 @@ typecheck: ## Run TypeScript checks
 	$(RUN) npm run typecheck
 
 test: ## Run tests with coverage
-	$(RUN) npm test
+	$(DOCKER_COMPOSE) run --rm -e FORCE_COLOR=1 $(SERVICE) npm test
 
 lint: ## Run ESLint
 	$(RUN) npm run lint

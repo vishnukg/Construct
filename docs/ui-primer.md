@@ -803,6 +803,7 @@ This test verifies that `renderReport` correctly wires the button to the callbac
 | Test file | What it covers |
 |---|---|
 | `src/ui/dom.test.ts` | `createElement`, `appendChildren` |
+| `src/ui/renderApp.test.ts` | `makeRenderApp` — loading/ready/error state transitions, refresh loop |
 | `src/ui/renderMetric.test.ts` | `formatDelta`, `getProgressPercent`, `renderMetric` |
 | `src/ui/renderInsight.test.ts` | `renderInsight` |
 | `src/ui/renderSummary.test.ts` | `renderSummary` |

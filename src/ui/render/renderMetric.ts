@@ -1,4 +1,4 @@
-import type { MetricStatus, MetricSummary } from "../app/core/index.ts";
+import type { MetricStatus, MetricSummary } from "../../app/core/index.ts";
 import { appendChildren, createElement } from "./dom.ts";
 
 const statusLabel: Record<MetricStatus, string> = {

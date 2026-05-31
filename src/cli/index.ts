@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import composeCliApp from "./compose.ts";
+import composeApp from "./compose.ts";
 import formatReport from "./formatReport.ts";
 
-const app = composeCliApp();
+const app = composeApp();
 
 try {
   const report = await app.getReport();
