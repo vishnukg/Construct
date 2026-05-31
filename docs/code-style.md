@@ -93,7 +93,7 @@ They wire concrete adapters to core use cases and return the public app surface 
 Example shape:
 
 ```ts
-const composeCliApp = (cfg: CliAppCfg = makeDefaultCliAppCfg()) => {
+const composeApp = (cfg: AppCfg = makeDefaultCfg()) => {
   const { source, insightEngine, logger } = cfg;
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 
@@ -116,19 +116,22 @@ If more capabilities are added, extend the returned object deliberately.
 
 ## make Functions
 
-`make*` functions build one coherent thing.
+`make*` functions are factories. They create a reusable capability — a function, use case, or adapter object — that is held onto and called repeatedly.
 
-That one thing can be a use case:
-
-```ts
-const getReport = makeDevmetrics(...);
-```
-
-or an adapter object:
+Examples:
 
 ```ts
-const source = makeSampleDevmetricsSource();
+const getReport = makeDevmetrics({ source, insightEngine, logger });
+// getReport is called on every refresh — it is a reusable capability
+
+const engine = makeRuleBasedInsightEngine();
+// engine.summarize is called whenever metrics are fetched
+
+const renderApp = makeRenderApp(root, getReport);
+// renderApp is called on first load and on every refresh
 ```
+
+The test: if the thing being returned is called more than once across the lifetime of the app, it is a factory and the function should be named `make*`.
 
 Avoid returning unnamed behavior directly from a factory:
 
@@ -154,11 +157,33 @@ Inline logger methods are acceptable because the object key carries the meaning:
 
 ```ts
 const consoleLogger: Logger = {
-  info: (message, data) => console.error(message, data ?? ""),
-  warn: (message, data) => console.error(message, data ?? ""),
+  info: (message, data) => console.info(message, data ?? ""),
+  warn: (message, data) => console.warn(message, data ?? ""),
   error: (message, data) => console.error(message, data ?? ""),
 };
 ```
+
+## render Functions
+
+`render*` functions are transforms. They take data and produce a one-time DOM element. They are not factories — they do not close over dependencies or return something reusable.
+
+```ts
+const card = renderMetric(metric);
+// card is an HTMLElement, produced once and immediately appended
+```
+
+Use `render*` when:
+
+- The function takes data and returns a DOM element
+- Nothing is closed over — all inputs arrive as arguments
+- The result is used immediately and not held onto
+
+Use `make*` instead when:
+
+- The function closes over dependencies (a root element, a `getReport` function)
+- The returned value is called more than once across the app's lifetime
+
+The distinction matters because they have different reasons to change. `render*` functions change when the visual design changes. `make*` factories change when the app's wiring or lifecycle changes.
 
 ## Rendering
 
@@ -173,7 +198,7 @@ src/cli/formatReport.ts
 Browser rendering belongs in:
 
 ```text
-src/ui/renderReport.ts
+src/ui/render/
 src/ui/styles.css
 ```
 
@@ -190,7 +215,7 @@ Use:
 ```text
 src/ui/index.ts        browser startup
 src/ui/compose.ts      browser dependency wiring
-src/ui/renderReport.ts DOM creation
+src/ui/render/         DOM creation
 src/ui/styles.css      styling and responsive layout
 ```
 
