@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import makeRuleBasedInsightEngine from "./makeRuleBasedInsightEngine.ts";
 import type { Devmetric } from "../../core/index.ts";
 
-test("produces a critical insight when metric is more than 25% above target (lower is better)", async () => {
+test("makeRuleBasedInsightEngine: given a metric more than 25% above its target (lower is better), produces a critical insight", async () => {
   const metrics: Devmetric[] = [
     { id: "code-size", label: "Median PR size", value: 420, unit: "lines", target: 300, trend: "up", lowerIsBetter: true },
   ];
@@ -17,7 +17,7 @@ test("produces a critical insight when metric is more than 25% above target (low
   }]);
 });
 
-test("produces a warning insight when metric is within 25% above target (lower is better)", async () => {
+test("makeRuleBasedInsightEngine: given a metric within 25% above its target (lower is better), produces a warning insight", async () => {
   const metrics: Devmetric[] = [
     { id: "pr-wait", label: "PR wait time", value: 9.5, unit: "hours", target: 8, trend: "flat", lowerIsBetter: true },
   ];
@@ -32,7 +32,7 @@ test("produces a warning insight when metric is within 25% above target (lower i
   }]);
 });
 
-test("produces a healthy info insight when all metrics are within target", async () => {
+test("makeRuleBasedInsightEngine: given all metrics within their targets, produces a healthy info insight", async () => {
   const metrics: Devmetric[] = [
     { id: "deploy-time", label: "Deployment time", value: 18, unit: "minutes", target: 20, trend: "down", lowerIsBetter: true },
   ];
@@ -47,7 +47,7 @@ test("produces a healthy info insight when all metrics are within target", async
   }]);
 });
 
-test("produces a critical insight when metric is more than 25% below target (higher is better)", async () => {
+test("makeRuleBasedInsightEngine: given a metric more than 25% below its target (higher is better), produces a critical insight", async () => {
   const metrics: Devmetric[] = [
     { id: "test-coverage", label: "Test coverage", value: 60, unit: "%", target: 80, trend: "down", lowerIsBetter: false },
   ];

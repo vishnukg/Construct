@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { appendChildren, createElement } from "./dom.ts";
 
 describe("createElement", () => {
-  it("creates an element of the given tag with no class or text by default", () => {
+  it("given no optional arguments, creates an element with no class or text", () => {
     const element = createElement("div");
 
     expect(element.tagName).toBe("DIV");
@@ -12,26 +12,26 @@ describe("createElement", () => {
     expect(element.textContent).toBe("");
   });
 
-  it("sets the class name when provided", () => {
+  it("given a class name, sets the class name on the element", () => {
     const element = createElement("p", "my-class");
 
     expect(element.className).toBe("my-class");
   });
 
-  it("sets the text content when provided", () => {
+  it("given text content, sets the text content on the element", () => {
     const element = createElement("span", undefined, "Hello");
 
     expect(element.textContent).toBe("Hello");
   });
 
-  it("sets both class name and text content when both are provided", () => {
+  it("given a class name and text content, sets both on the element", () => {
     const element = createElement("h1", "title", "Construct");
 
     expect(element.className).toBe("title");
     expect(element.textContent).toBe("Construct");
   });
 
-  it("returns an element typed to the given tag", () => {
+  it("given a specific tag, returns an element typed to that tag", () => {
     const element = createElement("article", "metric");
 
     expect(element.tagName).toBe("ARTICLE");
@@ -40,7 +40,7 @@ describe("createElement", () => {
 });
 
 describe("appendChildren", () => {
-  it("appends all children to the parent in order", () => {
+  it("given multiple children, appends all to the parent in order", () => {
     const parent = createElement("div");
     const first = createElement("span", undefined, "first");
     const second = createElement("span", undefined, "second");
@@ -52,7 +52,7 @@ describe("appendChildren", () => {
     expect(parent.children[1]?.textContent).toBe("second");
   });
 
-  it("leaves the parent empty when given an empty array", () => {
+  it("given an empty array, leaves the parent empty", () => {
     const parent = createElement("div");
 
     appendChildren(parent, []);
@@ -60,7 +60,7 @@ describe("appendChildren", () => {
     expect(parent.children).toHaveLength(0);
   });
 
-  it("appends new children after existing children", () => {
+  it("given a parent with existing children, appends new children after them", () => {
     const parent = createElement("ul");
     parent.append(createElement("li", undefined, "existing"));
 

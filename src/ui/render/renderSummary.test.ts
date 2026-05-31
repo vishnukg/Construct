@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 import renderSummary from "./renderSummary.ts";
 import { makeTestMetric, makeTestReport } from "./testFixtures.ts";
 
-test("counts risk, watch, good, and total metrics correctly", () => {
+test("renderSummary: given metrics of mixed statuses, counts risk, watch, good, and total correctly", () => {
   const report = makeTestReport({
     metrics: [
       makeTestMetric({ status: "risk" }),
@@ -23,7 +23,7 @@ test("counts risk, watch, good, and total metrics correctly", () => {
   expect(items[3]?.querySelector("strong")?.textContent).toBe("4"); // Total
 });
 
-test("shows zero for risk and watch when all metrics are good", () => {
+test("renderSummary: given all good metrics, shows zero for risk and watch", () => {
   const report = makeTestReport({
     metrics: [makeTestMetric({ status: "good" }), makeTestMetric({ status: "good" })],
     insights: [],
@@ -36,7 +36,7 @@ test("shows zero for risk and watch when all metrics are good", () => {
   expect(items[2]?.querySelector("strong")?.textContent).toBe("2"); // Good
 });
 
-test("shows all zeros when there are no metrics", () => {
+test("renderSummary: given no metrics, shows all zeros", () => {
   const report = makeTestReport({ metrics: [], insights: [] });
 
   const items = renderSummary(report).querySelectorAll(".summary-item");

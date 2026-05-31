@@ -4,7 +4,7 @@ import { expect, test, vi } from "vitest";
 import makeRenderApp from "./renderApp.ts";
 import { makeTestReport } from "./testFixtures.ts";
 
-test("sets data-state to loading before getReport resolves", async () => {
+test("makeRenderApp: given a resolving getReport, sets data-state to loading before it resolves", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport()));
 
@@ -14,7 +14,7 @@ test("sets data-state to loading before getReport resolves", async () => {
   await promise;
 });
 
-test("sets data-state to ready after getReport resolves", async () => {
+test("makeRenderApp: given a resolving getReport, sets data-state to ready after it resolves", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport()));
 
@@ -23,7 +23,7 @@ test("sets data-state to ready after getReport resolves", async () => {
   expect(root.dataset.state).toBe("ready");
 });
 
-test("renders the report into the root element", async () => {
+test("makeRenderApp: given a resolving getReport, renders the report into the root element", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport({
     metrics: [{ id: "m1", label: "Test", value: 5, unit: "days", target: 3, trend: "up", lowerIsBetter: true, status: "risk", deltaFromTarget: 2 }],
@@ -35,7 +35,7 @@ test("renders the report into the root element", async () => {
   expect(root.querySelector(".metric")).not.toBeNull();
 });
 
-test("sets data-state to error when getReport rejects with an Error", async () => {
+test("makeRenderApp: given getReport rejects with an Error, sets data-state to error", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => { throw new Error("Network failed"); }));
 
@@ -44,7 +44,7 @@ test("sets data-state to error when getReport rejects with an Error", async () =
   expect(root.dataset.state).toBe("error");
 });
 
-test("displays the error message when getReport rejects with an Error", async () => {
+test("makeRenderApp: given getReport rejects with an Error, displays the error message", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => { throw new Error("Network failed"); }));
 
@@ -53,7 +53,7 @@ test("displays the error message when getReport rejects with an Error", async ()
   expect(root.textContent).toBe("Network failed");
 });
 
-test("shows the fallback message when getReport rejects with a non-Error value", async () => {
+test("makeRenderApp: given getReport rejects with a non-Error value, shows the fallback message", async () => {
   const root = document.createElement("div");
   const renderApp = makeRenderApp(root, vi.fn(async () => { throw "unexpected"; }));
 
@@ -63,7 +63,7 @@ test("shows the fallback message when getReport rejects with a non-Error value",
   expect(root.textContent).toBe("Failed to load metrics");
 });
 
-test("calls getReport again on a second invocation", async () => {
+test("makeRenderApp: given a second invocation, calls getReport again", async () => {
   const root = document.createElement("div");
   const getReport = vi.fn(async () => makeTestReport());
   const renderApp = makeRenderApp(root, getReport);

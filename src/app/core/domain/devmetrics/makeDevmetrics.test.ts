@@ -3,7 +3,7 @@ import { makeDevmetrics } from "../../index.ts";
 import type { DevmetricsSource, InsightEngine } from "../../index.ts";
 import makeNoOpLogger from "../../../adapters/logger/makeNoOpLogger.ts";
 
-test("assigns correct status to each metric based on distance from target", async () => {
+test("makeDevmetrics: given metrics at different distances from their targets, assigns the correct status to each", async () => {
   const stubSource: DevmetricsSource = {
     listMetrics: async () => [
       { id: "good", label: "Good", value: 8, unit: "hours", target: 10, trend: "down", lowerIsBetter: true },
@@ -22,7 +22,7 @@ test("assigns correct status to each metric based on distance from target", asyn
   expect(report.metrics.map((m) => m.status)).toEqual(["good", "watch", "risk"]);
 });
 
-test("forwards raw metrics to the insight engine unchanged", async () => {
+test("makeDevmetrics: given a metrics source, forwards raw metrics to the insight engine unchanged", async () => {
   const stubSource: DevmetricsSource = {
     listMetrics: async () => [
       { id: "dlt", label: "Delivery lead time", value: 4, unit: "days", target: 3, trend: "up", lowerIsBetter: true },

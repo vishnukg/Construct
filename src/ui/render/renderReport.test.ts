@@ -4,7 +4,7 @@ import { expect, test, vi } from "vitest";
 import renderReport from "./renderReport.ts";
 import { makeTestInsight, makeTestMetric, makeTestReport } from "./testFixtures.ts";
 
-test("creates one metric card per metric", () => {
+test("renderReport: given two metrics, creates one card per metric", () => {
   const root = document.createElement("div");
 
   renderReport(root, makeTestReport({ metrics: [makeTestMetric(), makeTestMetric()], insights: [] }), () => {});
@@ -12,7 +12,7 @@ test("creates one metric card per metric", () => {
   expect(root.querySelectorAll(".metric")).toHaveLength(2);
 });
 
-test("creates one insight entry per insight", () => {
+test("renderReport: given two insights, creates one entry per insight", () => {
   const root = document.createElement("div");
 
   renderReport(root, makeTestReport({ metrics: [], insights: [makeTestInsight(), makeTestInsight()] }), () => {});
@@ -20,7 +20,7 @@ test("creates one insight entry per insight", () => {
   expect(root.querySelectorAll(".insight")).toHaveLength(2);
 });
 
-test("replaces existing root content on render", () => {
+test("renderReport: given existing root content, replaces it on render", () => {
   const root = document.createElement("div");
   root.innerHTML = "<p class='stale'>old content</p>";
 
@@ -29,7 +29,7 @@ test("replaces existing root content on render", () => {
   expect(root.querySelector(".stale")).toBeNull();
 });
 
-test("calls the refresh callback when the refresh button is clicked", () => {
+test("renderReport: given a refresh callback, calls it when the refresh button is clicked", () => {
   const root = document.createElement("div");
   const onRefresh = vi.fn();
 
@@ -39,7 +39,7 @@ test("calls the refresh callback when the refresh button is clicked", () => {
   expect(onRefresh).toHaveBeenCalledOnce();
 });
 
-test("displays the Construct title", () => {
+test("renderReport: given any report, displays the Construct title", () => {
   const root = document.createElement("div");
 
   renderReport(root, makeTestReport(), () => {});
