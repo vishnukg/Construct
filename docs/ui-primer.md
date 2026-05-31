@@ -1,26 +1,418 @@
 # UI Primer
 
-This project has a small browser UI built with Vite and vanilla TypeScript.
-There is no React, router, state library, or component framework yet.
+This document has four parts:
 
-The goal is to keep the UI understandable while the product surface is still small.
+1. **How browser UIs work** — what HTML, CSS, and JS are and how a browser uses them.
+2. **UI architecture patterns** — how to structure UI code so it stays understandable as it grows.
+3. **Vanilla TypeScript and functional programming for UI** — whether you can build real UIs without a framework.
+4. **How this project's UI is built** — the specific files, patterns, and wiring in Construct.
 
-## Mental Model
+---
+
+## Part 1: How Browser UIs Work
+
+### The three building blocks
+
+Every web page is made of three things:
+
+| Thing | What it does | File type |
+|---|---|---|
+| HTML | Describes the structure — what elements exist | `.html` |
+| CSS | Describes the appearance — colors, layout, spacing | `.css` |
+| JavaScript / TypeScript | Describes behavior — what happens when things change | `.ts` / `.js` |
+
+A browser reads all three and combines them into a visual page.
+
+### The DOM
+
+When the browser reads your HTML, it builds an in-memory tree of objects called the **DOM** (Document Object Model). Every element in the HTML file becomes a node in that tree:
+
+```text
+document
+└── html
+    └── body
+        └── div#app
+```
+
+JavaScript can read and change this tree at any time:
+
+```ts
+const el = document.createElement("p");  // create a new node
+el.textContent = "Hello";                 // set its text
+document.body.append(el);                 // add it to the tree
+```
+
+The browser immediately reflects those changes on screen. This is how UIs become dynamic — instead of reloading the whole page, JavaScript rewrites the parts that changed.
+
+### How CSS connects to elements
+
+CSS does not know about your TypeScript code directly. It only sees class names and element types. TypeScript creates elements with class names, and CSS provides styles for those names.
+
+```ts
+// TypeScript creates the element with a class
+const card = document.createElement("article");
+card.className = "metric metric-risk";
+```
+
+```css
+/* CSS targets that class */
+.metric-risk .status-badge {
+  color: #8e241e;
+  background: #ffe0dc;
+}
+```
+
+If you want something to look different, add or remove a class name in TypeScript. CSS handles the rest.
+
+### Why a dev server?
+
+Browsers can open a plain `.html` file from disk, but they block many features for security:
+
+- `import` statements between files are blocked
+- TypeScript must be compiled to JavaScript first
+- CSS `@import` across files does not work in the same way
+
+A dev server solves this. It intercepts browser requests, compiles TypeScript on the fly, handles module imports, and serves everything over `http://`. This is what Vite does.
+
+For production, Vite bundles all the files into a small set of optimized `.js` and `.css` files that any web server can serve statically.
+
+### Frameworks vs vanilla
+
+Popular UI frameworks like React, Svelte, and Vue sit on top of the DOM. They add:
+
+- **Reactivity** — automatically re-render when data changes, instead of manually calling render functions.
+- **Components** — reusable UI pieces with their own logic and styles scoped together.
+- **Routing** — show different UI for different URLs without reloading the page.
+
+This project uses **vanilla TypeScript** instead. There is no framework. TypeScript calls browser APIs directly. This keeps the code simple while the UI is small — there is only one page and one data flow. See [Part 3](#part-3-vanilla-typescript-and-functional-programming-for-ui) for a thorough treatment of when this is appropriate.
+
+---
+
+## Part 2: UI Architecture Patterns
+
+These three patterns govern how this project's UI is structured. They are independent of any framework — they are principles, not library features.
+
+### Pattern 1: Component decomposition
+
+A **component** in vanilla TypeScript is a function that:
+
+- Takes data as its input (function arguments)
+- Returns a DOM element as its output
+- Has no side effects beyond building that element — it does not fetch data, read global state, or directly modify anything outside itself
+
+```ts
+// This is a component
+const renderMetric = (metric: MetricSummary): HTMLElement => {
+  const card = createElement("article", `metric metric-${metric.status}`);
+  // ... build and return the element ...
+  return card;
+};
+```
+
+The key property is self-containment. `renderMetric` does not know that `renderReport` exists. It does not know about `renderInsight`. It only knows: given a `MetricSummary`, produce this DOM structure.
+
+**Why this matters: understandability**
+
+You can read `renderMetric.ts` and understand it completely without reading any other file. The function signature tells you everything going in and everything coming out. There are no hidden dependencies.
+
+**Why this matters: testability**
+
+Because the function takes data and returns an element, you can test it directly:
+
+```ts
+const el = renderMetric({ label: "PR Cycle Time", value: 5, target: 3, status: "risk", ... });
+// assert el has class "metric-risk"
+// assert el contains the text "5 days"
+```
+
+No mocking, no setup, no browser simulation required beyond a DOM environment.
+
+**Why this matters: replaceability**
+
+If you want to redesign the metric card, you change `renderMetric.ts`. Nothing else needs to change because nothing else knows how a metric is rendered.
+
+**The anti-pattern: the monolith render function**
+
+Imagine if `renderReport` built every element inline — the topbar, the summary strip, every metric card, every insight — all in one 300-line function. A single change to how an insight looks requires you to find the right 10 lines inside that 300. There are no clear units to understand, test, or replace. Components are the solution: they give the UI the same single-responsibility discipline that the core domain code already has.
+
+**The render tree**
+
+Components compose into a tree, exactly like the DOM itself:
+
+```text
+renderReport(root, report, onRefresh)
+  └── renderSummary(report)         → section element
+  └── renderMetric(metric)          → article element, one per metric
+  └── renderInsight(insight)        → article element, one per insight
+```
+
+Each node in the tree is a self-contained function. The parent composes them; the children know nothing about each other.
+
+---
+
+### Pattern 2: Data flows down
+
+In this UI, data only moves in one direction: **from parent to child, as function arguments**.
+
+`renderReport` receives the full report and passes slices of it down:
+
+```ts
+const renderReport = (root: HTMLElement, report: DevmetricsReport, onRefresh: () => void) => {
+  // ...
+  for (const metric of report.metrics) {
+    metrics.append(renderMetric(metric));      // passes one MetricSummary down
+  }
+  for (const insight of report.insights) {
+    insights.append(renderInsight(insight));   // passes one Insight down
+  }
+  // ...
+};
+```
+
+`renderMetric` and `renderInsight` receive exactly the data they need and nothing more. They never reach upward to get more data themselves.
+
+**Why this matters: render functions become pure functions**
+
+A pure function is one where the same input always produces the same output, with no hidden dependencies on external state. Every render function in this project is a pure function in this sense.
+
+This is functional programming applied to UI. The benefit is predictability: if `renderMetric` ever produces wrong output, you only have to look at its input to understand why. There is no hidden state to investigate, no shared mutable object that might have been modified elsewhere.
+
+**Why this matters: the data flow is traceable**
+
+Because data only flows in one direction, you can always answer "where does this value come from?" by reading upward through the call stack. The value in the metric card came from `renderMetric(metric)`, which was called by `renderReport`, which received `report` from `index.ts`, which got it from `getReport()`. That chain is completely explicit.
+
+**The anti-pattern: a render function that fetches its own data**
+
+Imagine if `renderMetric` called `getReport()` directly to look up its own data. Now:
+
+- `renderMetric` is no longer self-contained — it depends on a function that hits an adapter
+- You cannot test it without setting up the full app composition
+- Two different places in the tree could call `getReport()` and get inconsistent results
+- The data flow is no longer traceable — data enters the tree from multiple points
+
+The rule is: render functions receive data. They do not acquire it.
+
+---
+
+### Pattern 3: Events bubble up
+
+While data flows down, user actions flow upward through **callback functions**.
+
+A child component signals that something happened by calling a function it was given as an argument. The parent defines what that function does. The child does not know what the parent will do — it only knows that something happened and it should report it.
+
+```ts
+// renderReport does not know what "refresh" means
+const renderReport = (root: HTMLElement, report: DevmetricsReport, onRefresh: () => void) => {
+  const refreshButton = createElement("button", "refresh-button", "Refresh");
+  refreshButton.addEventListener("click", onRefresh);  // calls the callback, that's all
+  // ...
+};
+
+// index.ts defines what refresh means
+const renderApp = async () => {
+  appRoot.dataset.state = "loading";
+  try {
+    const report = await app.getReport();
+    renderReport(appRoot, report, renderApp);  // passes renderApp as the onRefresh callback
+    appRoot.dataset.state = "ready";
+  } catch (caught) {
+    appRoot.dataset.state = "error";
+  }
+};
+```
+
+`renderReport` contains the button. `index.ts` contains the behavior. The callback is the wire between them.
+
+**Why this matters: render functions stay presentational**
+
+If the refresh button's click handler were inside `renderReport`, it would need to call `getReport()`, manage the loading state, and handle errors. `renderReport` would be doing two jobs: building the UI and orchestrating application behavior. Those two jobs have different reasons to change and belong in different places.
+
+By accepting a callback, `renderReport` stays purely presentational. It says: "a refresh was requested." It leaves the meaning of "refresh" entirely to the caller.
+
+**Why this matters: the parent stays in control**
+
+The parent (`index.ts`) is the place that knows about loading state, error handling, and the app's data source. It makes sense that the parent also defines what happens when a user action occurs. Callbacks preserve that ownership.
+
+**The anti-pattern: a child that reaches up**
+
+Imagine if the refresh button's handler directly called `composeUiApp()` from inside `renderReport`. Now:
+
+- `renderReport` imports from `compose.ts`, coupling a display function to the app's wiring
+- There is no way to test the refresh button without a full browser environment and the real app composition
+- The behavior of the button is hidden inside a render function where no one would think to look for it
+
+Callbacks keep behavior ownership explicit and at the right level.
+
+---
+
+### Pattern 4: State lives at the boundary
+
+**What is state?**
+
+State is any value that changes over time and affects what is displayed. In a simple UI like this one, there are three states:
+
+- `loading` — data is being fetched
+- `ready` — data arrived, report is displayed
+- `error` — something went wrong
+
+**What is the boundary?**
+
+The boundary is the point where the outside world enters your app. Here, the outside world is the async call to `getReport()`. Before it resolves, the UI is in loading state. After it resolves, the UI is in ready state. If it rejects, the UI is in error state.
+
+The boundary is always where state should live — because state changes *because* of what happens at the boundary.
+
+```ts
+// index.ts: owns the boundary, owns the state
+const renderApp = async () => {
+  appRoot.dataset.state = "loading";          // state transition 1
+
+  try {
+    const report = await app.getReport();     // the boundary — async I/O
+    renderReport(appRoot, report, renderApp);
+    appRoot.dataset.state = "ready";          // state transition 2
+  } catch (caught) {
+    appRoot.dataset.state = "error";          // state transition 3
+    appRoot.textContent = caught instanceof Error ? caught.message : "Failed";
+  }
+};
+```
+
+Render functions receive already-resolved data. They display state; they do not manage it.
+
+**The `data-state` pattern**
+
+Rather than adding and removing DOM elements to show a loading spinner, the state is stored on the existing `#app` element as a data attribute. CSS then controls visibility:
+
+```css
+#app[data-state="loading"]::before {
+  content: "Loading Construct...";
+}
+```
+
+This is a deliberate choice: there is only one place where state lives (the `#app` element's `dataset.state`), and CSS responds to it declaratively. There is no spinner element to remember to remove, and no risk of showing both the spinner and the content simultaneously.
+
+**The anti-pattern: state inside a render function**
+
+Imagine if `renderReport` received a `Promise<DevmetricsReport>` instead of a resolved report, and managed its own loading spinner internally. Now:
+
+- `renderReport` is no longer a pure function — it contains a pending async operation and its own internal state
+- You cannot test it without waiting for the promise to resolve
+- The loading state lives inside a render function, making it invisible to `index.ts`
+- If two things can update state (the render function's spinner and `index.ts`'s `data-state`), they can contradict each other
+
+The rule is: render functions receive complete, resolved data. They do not wait for anything.
+
+---
+
+## Part 3: Vanilla TypeScript and Functional Programming for UI
+
+### Is this a legitimate approach?
+
+Yes, fully. Vanilla TypeScript with functional principles is a legitimate, professional approach to building browser UIs. It is not a workaround or a stepping stone. It is appropriate for any UI that does not need the specific capabilities that frameworks provide.
+
+The render functions in this project are pure functions. They take data, return elements, have no side effects. That is not "basic" UI programming — it is UI programming done in a functional style, and it has real advantages.
+
+### How functional programming maps to UI
+
+The same principles that make the core domain code clean apply directly to the UI layer:
+
+**Pure functions**
+
+A render function that takes data and returns a DOM element with no side effects is a pure function. Given the same report, `renderMetric` always produces the same card. This makes the UI predictable in the same way that `makeDevmetrics` is predictable — the output is fully determined by the input.
+
+**Immutability**
+
+Render functions do not mutate their input. They receive a `MetricSummary` and build a new element from it. The original data is untouched. This matters because multiple render functions might receive the same data, and you never want one render function's side effects to affect another's output.
+
+**Function composition**
+
+`renderReport` is composed from `renderMetric`, `renderInsight`, `renderSummary`, and the DOM helpers in `dom.ts`. Small, single-purpose functions are combined into larger ones. This is function composition applied to UI, the same pattern used throughout the app core.
+
+**Separation of data and display**
+
+The core domain owns how metrics are classified (good/watch/risk). The render layer owns how those classifications are displayed (green/amber/red badges). These concerns are fully separated. Changing the color of a risk badge does not require touching `makeDevmetrics.ts`. Changing the threshold for "watch" status does not require touching `renderMetric.ts`.
+
+### What vanilla TS handles perfectly
+
+- Loading data once, rendering it, letting the user refresh
+- Static layouts where structure does not change, only content does
+- Simple interactions: button clicks, form submissions that trigger a data reload
+- Any UI that is fundamentally "fetch data, display data" — which covers a large fraction of real dashboards and internal tools
+
+### What gets harder without a framework
+
+**Surgical DOM updates**
+
+If a single metric changes its status, re-rendering the whole report is the simplest approach (which this project does via `root.replaceChildren()`). This works fine at small scales. A framework's virtual DOM diffing would update only the changed card without touching anything else. At large scales — hundreds of items updating frequently — full re-renders become noticeably slow.
+
+**Scoped styles**
+
+CSS class names in this project are global. `.metric` in `styles.css` applies to every element with that class anywhere on the page. Frameworks like React and Svelte support scoped styles where `.metric` inside a component only applies to that component's elements. In vanilla CSS, you manage this through naming discipline — if you add a new section with its own kind of "metric," you need to name it differently to avoid collision.
+
+**Complex interactive state**
+
+If the UI grows to include which panel is expanded, which filter is active, which row is selected, and those states interact with each other, managing them manually in vanilla TypeScript becomes error-prone. Frameworks provide tools (useState, stores, signals) that handle this systematically.
+
+### How to handle more complexity without a framework
+
+If the UI grows but you want to stay with vanilla TypeScript, the functional pattern scales by centralizing state explicitly:
+
+```ts
+// one state object, one update function, one render call
+type AppState = {
+  status: "loading" | "ready" | "error";
+  report: DevmetricsReport | null;
+  filter: "all" | "risk" | "watch";
+  error: string | null;
+};
+
+const update = (state: AppState, newState: Partial<AppState>): AppState =>
+  ({ ...state, ...newState });
+
+const render = (root: HTMLElement, state: AppState) => {
+  root.replaceChildren();
+  // build UI from state
+};
+
+// every user action produces a new state and triggers a re-render
+const onFilterChange = (filter: AppState["filter"]) => {
+  appState = update(appState, { filter });
+  render(appRoot, appState);
+};
+```
+
+This is the same unidirectional pattern: state flows down into render, user actions produce new state at the top. It is essentially what Redux and similar libraries formalize. You can do it without them.
+
+### The honest limits
+
+Vanilla TypeScript reaches its natural limits when:
+
+- The UI has many independently-updating regions and full re-renders produce visible flicker
+- Multiple views or routes need to be managed
+- Components need to be reused with isolated state (e.g., a dropdown that tracks its own open/closed state and is used in 20 places)
+
+At that point, a framework is not a concession — it is the right tool. But those limits are not close for a dashboard that loads a report and displays it.
+
+---
+
+## Part 4: How This Project's UI Is Built
+
+### Mental model
 
 The UI has four layers:
 
 ```text
-index.html
-  creates the browser page and #app mount point
+src/ui/index.html
+  the browser page structure and mount point
 
 src/ui/index.ts
-  browser entrypoint; starts the UI
+  browser entrypoint; owns state and the async boundary
 
 src/ui/compose.ts
   wires app dependencies for the browser
 
-src/ui/renderReport.ts
-  turns a DevmetricsReport into DOM elements
+src/ui/render*.ts
+  pure functions: take report data, return DOM elements
 
 src/ui/styles.css
   controls layout, spacing, color, and responsive behavior
@@ -29,250 +421,201 @@ src/ui/styles.css
 The UI reuses the same application layer as the CLI:
 
 ```text
-src/app/core      report logic and ports
-src/app/adapters  current sample metrics, insights, and logger
+src/app/core      report logic and types
+src/app/adapters  sample metrics source, insight engine, logger
 ```
 
-That means CLI and UI share the same report behavior, but render it differently.
+CLI and UI share the same report-building behavior. They differ only in how they display the result: CLI prints plain text, UI builds DOM nodes.
 
-## HTML
+### How a render cycle works
 
-The browser starts at `index.html`.
+When the page loads, this sequence runs:
 
-The important part is:
+```text
+1. Browser loads index.html
+2. Browser sees <script type="module" src="/index.ts">
+3. Vite compiles index.ts and its imports
+4. index.ts finds the #app element
+5. index.ts calls compose.ts to get getReport()
+6. index.ts sets data-state="loading" on #app
+7. index.ts calls getReport(), which fetches metrics and insights from adapters
+8. index.ts sets data-state="ready" and passes the report to renderReport()
+9. renderReport() creates DOM nodes and appends them to #app
+10. The page is visible
+```
+
+When the user clicks Refresh, steps 6–9 repeat. The root element is cleared and rebuilt from scratch.
+
+### HTML (`src/ui/index.html`)
 
 ```html
 <div id="app"></div>
-<script type="module" src="/src/ui/index.ts"></script>
+<script type="module" src="/index.ts"></script>
 ```
 
-`#app` is an empty mount point.
-The TypeScript entrypoint finds that element and fills it with UI.
+`#app` is an empty mount point. TypeScript finds it by ID and fills it with content.
 
-`type="module"` lets the browser load modern JavaScript modules.
-Vite handles TypeScript, CSS imports, and bundling during dev/build.
+`type="module"` tells the browser to treat the script as an ES module, which enables `import` statements. Vite intercepts the request for `/index.ts` and compiles it.
 
-## TypeScript Entry
+The `data-state` attribute on `#app` is set by TypeScript during loading and error states:
 
-`src/ui/index.ts` is the browser entrypoint.
-
-It does this:
-
-```text
-import CSS
-create the UI app from src/ui/compose.ts
-load the report
-render the report into #app
-handle loading/error states
+```ts
+appRoot.dataset.state = "loading"; // shows "Loading Construct..." via CSS
+appRoot.dataset.state = "ready";   // hides the loading message
+appRoot.dataset.state = "error";   // shows an error message
 ```
 
-The entrypoint should stay small.
-It should coordinate startup, not contain layout details, business logic, or concrete adapter setup.
+CSS uses attribute selectors to respond:
 
-## Compose
+```css
+#app[data-state="loading"]::before {
+  content: "Loading Construct...";
+}
+```
 
-`src/ui/compose.ts` is the UI composition root.
+This pattern avoids adding and removing elements for loading states — the state lives on the existing element and CSS handles the display.
 
-It builds the default browser dependencies, wires the shared app use case, and returns the UI app surface:
+### Compose (`src/ui/compose.ts`)
 
 ```ts
 const source = makeSampleDevmetricsSource();
 const insightEngine = makeRuleBasedInsightEngine();
-const logger = makeNoOpLogger();
+const logger = consoleLogger;
 const getReport = makeDevmetrics({ source, insightEngine, logger });
 
 return { getReport };
 ```
 
-This mirrors `src/cli/compose.ts`.
+`compose.ts` is the place where browser-specific dependencies are wired together. It is the only file in `src/ui/` that imports from `src/app/`. All other render files receive data as function arguments and do not touch the app layer directly.
 
-If the UI later needs browser-specific dependencies, add them here or behind small adapter factories.
-
-Examples:
+If the UI later needs browser-specific adapters, they belong here:
 
 ```text
 localStorage settings adapter
-HTTP metrics source
+HTTP metrics source (fetches from a real API)
 browser analytics logger
 ```
 
-## Rendering
+### Rendering (`src/ui/render*.ts`)
 
-`src/ui/renderReport.ts` converts a `DevmetricsReport` into DOM nodes.
-
-It uses browser APIs directly:
-
-```ts
-document.createElement("section");
-element.className = "metrics-grid";
-element.textContent = "Construct";
-parent.append(child);
-```
-
-The current render flow is:
+Each render file is a pure function: it receives data and returns a DOM element. It does not fetch data, hold state, or know about other parts of the UI.
 
 ```text
 renderReport(root, report, onRefresh)
   clears root
-  creates the page shell
-  creates the top bar
-  creates the summary strip
-  renders each metric card
-  renders each insight
+  creates the page shell (main.shell)
+  creates the top bar (header.topbar)
+    brand (div.brand) — title + timestamp
+    refresh button (calls onRefresh on click)
+  calls renderSummary(report) → section.summary-strip
+  calls renderMetric(metric) for each metric → article.metric
+  calls renderInsight(insight) for each insight → article.insight
   appends everything to root
 ```
 
-Keep business rules out of rendering.
-If report status logic changes, update `src/app/core`.
-If the display changes, update `src/ui/renderReport.ts` and `src/ui/styles.css`.
-
-## CSS
-
-`src/ui/styles.css` controls the visual design.
-
-The main classes are:
-
-```text
-.shell           page width and outer spacing
-.topbar          title and refresh button layout
-.summary-strip   high-level counts
-.dashboard       two-column desktop layout
-.metrics-grid    metric card grid
-.metric          individual metric card
-.insights-panel  insights column
-.insight         individual insight
-```
-
-CSS is class-based.
-TypeScript creates elements with class names, and CSS styles those classes.
-
-Example:
+The DOM helpers in `src/ui/dom.ts` keep element creation concise:
 
 ```ts
-const item = createElement("article", `metric metric-${metric.status}`);
+// Without helpers
+const el = document.createElement("article");
+el.className = "insight";
+el.textContent = "...";
+
+// With helpers
+const el = createElement("article", "insight", "...");
 ```
 
-That produces classes like:
+### CSS (`src/ui/styles.css`)
 
-```html
-<article class="metric metric-risk"></article>
+The main layout classes:
+
+```text
+.shell           page width cap and outer padding
+.topbar          title and refresh button, flex row
+.summary-strip   4-column counts grid
+.dashboard       two-column layout: metrics left, insights right
+.metrics-grid    2-column metric card grid
+.metric          individual metric card
+.insights-panel  insights sidebar
+.insight         individual insight entry
 ```
 
-CSS can then style different statuses:
+Status-specific styling uses modifier classes appended by TypeScript:
+
+```text
+.metric-good     green badge and progress bar
+.metric-watch    amber badge and progress bar
+.metric-risk     red badge and progress bar
+
+.insight-info      blue severity label
+.insight-warning   amber severity label
+.insight-critical  red severity label
+```
+
+### Responsive layout
+
+The dashboard is two columns on desktop and one column on small screens:
 
 ```css
-.metric-risk .status-badge {
-  color: #8e241e;
-  background: #ffe0dc;
+/* desktop: metrics grid | insights panel */
+.dashboard {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
 }
-```
 
-## Responsive Layout
-
-The UI uses a media query near the bottom of `styles.css`:
-
-```css
+/* small screen: stack vertically */
 @media (max-width: 820px) {
-  ...
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
 }
 ```
 
-Desktop uses a two-column dashboard:
+When adding new layout sections, check both widths.
 
-```text
-metrics grid | insights panel
+### Vite config (`vite.config.ts`)
+
+```ts
+export default defineConfig({
+  root: "src/ui",         // where index.html lives
+  build: {
+    outDir: "../../dist/ui",  // where to emit production files
+  },
+});
 ```
 
-Small screens collapse to one column:
+`root: "src/ui"` tells Vite to treat `src/ui/` as the project root. This means:
 
-```text
-metrics grid
-insights panel
-```
+- The dev server looks for `index.html` in `src/ui/`
+- Absolute paths in HTML (like `/index.ts`) resolve from `src/ui/`
+- `outDir` is relative to `root`, so `../../dist/ui` resolves to `dist/ui` at the repo root
 
-When changing layout, check both desktop and narrow widths.
-
-## Dev Server
-
-Run the UI locally with:
+### Running the UI
 
 ```sh
-npm run ui
+npm run ui          # dev server at http://localhost:5173 with hot reload
+npm run ui:build    # production build to dist/ui/
+npm run ui:preview  # preview the production build locally
 ```
 
-or through Docker:
+Or via Docker:
 
 ```sh
 make ui
-```
-
-The dev server is available at:
-
-```text
-http://localhost:5173
-```
-
-Vite reloads the browser when UI files change.
-
-## Production Build
-
-Build the browser UI with:
-
-```sh
-npm run ui:build
-```
-
-or:
-
-```sh
 make ui-build
 ```
 
-This emits static files into `dist/`:
+### Safe change guide
 
-```text
-dist/ui/index.html
-dist/ui/assets/*.js
-dist/ui/assets/*.css
-```
+| What to change | Where to change it |
+|---|---|
+| Text, layout, colors | `src/ui/renderReport.ts`, `src/ui/styles.css` |
+| A specific render piece | `src/ui/renderMetric.ts`, `src/ui/renderInsight.ts`, `src/ui/renderSummary.ts` |
+| Metric data | `src/app/adapters/devmetrics/` |
+| Status rules (good/watch/risk) | `src/app/core/domain/devmetrics/makeDevmetrics.ts` |
+| Insights | `src/app/adapters/insights/` |
+| Browser-specific wiring | `src/ui/compose.ts` |
 
-Those files can be deployed separately from the CLI.
-The CLI build produces a Node executable; the UI build produces browser assets.
-
-## Safe Change Guide
-
-To change text or layout:
-
-```text
-src/ui/renderReport.ts
-src/ui/styles.css
-```
-
-To change metric data:
-
-```text
-src/app/adapters/devmetrics/
-```
-
-To change status rules:
-
-```text
-src/app/core/domain/devmetrics/makeDevmetrics.ts
-```
-
-To change insights:
-
-```text
-src/app/adapters/insights/
-```
-
-To add browser-specific wiring:
-
-```text
-src/ui/compose.ts
-```
-
-## When To Add A Framework
+### When to add a framework
 
 Stay with vanilla TypeScript while the UI is mostly:
 
@@ -285,12 +628,11 @@ refresh report
 Consider React, Svelte, or another framework when the UI needs:
 
 ```text
-routing
-forms
-complex user state
-interactive charts
-many reusable components
-client-side data fetching states
+routing (multiple pages or views)
+forms with complex validation
+interactive state that changes without a data reload
+components with isolated internal state reused in many places
+large item lists that update frequently and need surgical DOM updates
 ```
 
-Until then, vanilla TypeScript keeps the moving parts low.
+Until then, vanilla TypeScript with functional principles is a complete and appropriate choice.
