@@ -8,13 +8,13 @@ const statusLabel: Record<MetricStatus, string> = {
   good: "GOOD",
   watch: "WATCH",
   risk: "RISK",
-};
+} satisfies Record<MetricStatus, string>;
 
 const severityPrefix: Record<InsightSeverity, string> = {
   info: "info",
   warning: "warning",
   critical: "critical",
-};
+} satisfies Record<InsightSeverity, string>;
 
 const trendSymbol = {
   up: "^",

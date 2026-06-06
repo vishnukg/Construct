@@ -77,14 +77,13 @@ If Construct later becomes multi-ecosystem or starts shipping container images, 
 
 ## Runtime Versions
 
-Use supported Node.js LTS releases for runtime images.
-Production images should avoid odd-numbered Current releases because they have a shorter support window.
+Use the latest supported Node.js LTS release line pinned by `package.json` and the runtime image.
 
 Construct currently uses:
 
 ```text
-node:24-bookworm-slim
+node:24.16.0-bookworm-slim
 ```
 
-Node 24 is the current LTS line, so it is the right default for this project.
-When a newer even-numbered Node release becomes LTS, update the Docker image in a planned dependency update.
+Node 24.16.0 is the latest LTS release available as of June 6, 2026.
+When a newer Node 24 patch is released, update the Docker image and `engines.node` in a planned dependency update.

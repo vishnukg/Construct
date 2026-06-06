@@ -18,7 +18,7 @@ Use npm for now.
 
 npm is the conservative choice for this repo because:
 
-- It ships with Node, including the `node:24-bookworm-slim` container image.
+- It ships with Node, including the `node:24.16.0-bookworm-slim` container image.
 - It keeps the container image and onboarding simpler.
 - `package-lock.json` plus `npm ci` gives repeatable installs.
 - The current dependency set does not need Yarn-specific features.

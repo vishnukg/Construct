@@ -6,6 +6,9 @@
   "bin": {
     "construct": "./dist/cli/cli.js"
   },
+  "engines": {
+    "node": ">=24.16.0 <25"
+  },
   "scripts": {
     "cli": "tsx src/cli/index.ts",
     "ui": "vite --host 0.0.0.0",
@@ -16,7 +19,7 @@
     "prebuild": "npm run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint src tests",
+    "lint": "eslint src",
     "security:audit": "npm audit --audit-level=moderate",
     "test": "vitest run --coverage"
   },
@@ -30,7 +33,7 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.9.1",
+    "@types/node": "^24.13.1",
     "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
