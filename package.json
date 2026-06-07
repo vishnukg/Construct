@@ -16,7 +16,7 @@
     "ui:preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "build": "tsdown",
-    "prebuild": "npm run typecheck",
+    "prebuild": "npm run typecheck && npm run audit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint src",
