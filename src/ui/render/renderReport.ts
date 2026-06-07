@@ -21,7 +21,11 @@ const renderReport = (
   const header = createElement("header", "topbar");
   const brand = createElement("div", "brand");
   const title = createElement("h1", undefined, "Construct");
-  const timestamp = createElement("p", undefined, `Generated ${formatDate(report.generatedAt)}`);
+  const timestamp = createElement(
+    "p",
+    undefined,
+    `Generated ${formatDate(report.generatedAt)}`,
+  );
   const refreshButton = createElement("button", "refresh-button", "Refresh");
   const content = createElement("section", "dashboard");
   const metrics = createElement("section", "metrics-grid");

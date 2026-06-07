@@ -101,9 +101,9 @@ composition root's job) and wires them into the core use case:
 
 ```ts
 const composeApp = (cfg: Partial<AppCfg> = {}) => {
-  const source        = cfg.source        ?? makeSampleDevmetricsSource();
+  const source = cfg.source ?? makeSampleDevmetricsSource();
   const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger        = cfg.logger        ?? consoleLogger;
+  const logger = cfg.logger ?? consoleLogger;
 
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 

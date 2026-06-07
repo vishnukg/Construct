@@ -6,9 +6,33 @@ import makeNoOpLogger from "../../../adapters/logger/makeNoOpLogger.ts";
 test("makeDevmetrics: given metrics at different distances from their targets, assigns the correct status to each", async () => {
   const stubSource: DevmetricsSource = {
     listMetrics: async () => [
-      { id: "good", label: "Good", value: 8, unit: "hours", target: 10, trend: "down", lowerIsBetter: true },
-      { id: "watch", label: "Watch", value: 11, unit: "hours", target: 10, trend: "flat", lowerIsBetter: true },
-      { id: "risk", label: "Risk", value: 14, unit: "hours", target: 10, trend: "up", lowerIsBetter: true },
+      {
+        id: "good",
+        label: "Good",
+        value: 8,
+        unit: "hours",
+        target: 10,
+        trend: "down",
+        lowerIsBetter: true,
+      },
+      {
+        id: "watch",
+        label: "Watch",
+        value: 11,
+        unit: "hours",
+        target: 10,
+        trend: "flat",
+        lowerIsBetter: true,
+      },
+      {
+        id: "risk",
+        label: "Risk",
+        value: 14,
+        unit: "hours",
+        target: 10,
+        trend: "up",
+        lowerIsBetter: true,
+      },
     ],
   };
 
@@ -19,20 +43,44 @@ test("makeDevmetrics: given metrics at different distances from their targets, a
     now: () => new Date("2026-01-01T00:00:00Z"),
   })();
 
-  expect(report.metrics.map((m) => m.status)).toEqual(["good", "watch", "risk"]);
+  expect(report.metrics.map((m) => m.status)).toEqual([
+    "good",
+    "watch",
+    "risk",
+  ]);
 });
 
 test("makeDevmetrics: given a metrics source, forwards raw metrics to the insight engine unchanged", async () => {
   const stubSource: DevmetricsSource = {
     listMetrics: async () => [
-      { id: "dlt", label: "Delivery lead time", value: 4, unit: "days", target: 3, trend: "up", lowerIsBetter: true },
+      {
+        id: "dlt",
+        label: "Delivery lead time",
+        value: 4,
+        unit: "days",
+        target: 3,
+        trend: "up",
+        lowerIsBetter: true,
+      },
     ],
   };
   const mockInsightEngine: InsightEngine = { summarize: vi.fn(async () => []) };
 
-  await makeDevmetrics({ source: stubSource, insightEngine: mockInsightEngine, logger: makeNoOpLogger() })();
+  await makeDevmetrics({
+    source: stubSource,
+    insightEngine: mockInsightEngine,
+    logger: makeNoOpLogger(),
+  })();
 
   expect(mockInsightEngine.summarize).toHaveBeenCalledWith([
-    { id: "dlt", label: "Delivery lead time", value: 4, unit: "days", target: 3, trend: "up", lowerIsBetter: true },
+    {
+      id: "dlt",
+      label: "Delivery lead time",
+      value: 4,
+      unit: "days",
+      target: 3,
+      trend: "up",
+      lowerIsBetter: true,
+    },
   ]);
 });

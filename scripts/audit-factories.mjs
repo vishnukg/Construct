@@ -21,7 +21,14 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
-const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".git", "build", ".next"]);
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  "coverage",
+  ".git",
+  "build",
+  ".next",
+]);
 
 const walk = (dir, acc = []) => {
   for (const name of readdirSync(dir)) {
@@ -41,7 +48,10 @@ const walk = (dir, acc = []) => {
 const blankComments = (s) =>
   s
     .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/([^:]|^)\/\/[^\n]*/g, (m, p) => p + " ".repeat(m.length - p.length));
+    .replace(
+      /([^:]|^)\/\/[^\n]*/g,
+      (m, p) => p + " ".repeat(m.length - p.length),
+    );
 
 const defRe = /(?:export\s+)?const\s+((?:make|compose)[A-Za-z0-9]*)\s*=/g;
 const callRe = /\b((?:make|compose)[A-Za-z0-9]*)\s*\(/g;
@@ -92,7 +102,9 @@ for (const file of walk(ROOT)) {
   for (const m of src.matchAll(defRe)) {
     const name = m[1];
     const body = factoryBody(src, m.index + m[0].length);
-    const calls = [...new Set([...body.matchAll(callRe)].map((c) => c[1]))].filter((c) => c !== name);
+    const calls = [
+      ...new Set([...body.matchAll(callRe)].map((c) => c[1])),
+    ].filter((c) => c !== name);
     const isMake = name.startsWith("make");
     if (isMake && calls.length > 0) {
       violations.push({
@@ -113,7 +125,9 @@ for (const file of walk(ROOT)) {
 }
 
 if (violations.length === 0) {
-  console.log("✓ factory audit passed — every make* is a leaf, every compose* wires.");
+  console.log(
+    "✓ factory audit passed — every make* is a leaf, every compose* wires.",
+  );
   process.exit(0);
 }
 
@@ -122,6 +136,10 @@ for (const v of violations) {
   console.error(`  ${relative(ROOT, v.file)}:${v.line}  ${v.name}`);
   console.error(`      ${v.msg}\n`);
 }
-console.error("Rule: make* = leaf factory (one port, logic inline, calls no factory);");
-console.error("      compose* = wiring (calls make*/compose* and/or selects an adapter).");
+console.error(
+  "Rule: make* = leaf factory (one port, logic inline, calls no factory);",
+);
+console.error(
+  "      compose* = wiring (calls make*/compose* and/or selects an adapter).",
+);
 process.exit(1);

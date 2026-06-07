@@ -16,10 +16,10 @@ This document has five parts:
 
 Every web page is made of three things:
 
-| Thing | What it does | File type |
-|---|---|---|
-| HTML | Describes the structure — what elements exist | `.html` |
-| CSS | Describes the appearance — colors, layout, spacing | `.css` |
+| Thing                   | What it does                                         | File type     |
+| ----------------------- | ---------------------------------------------------- | ------------- |
+| HTML                    | Describes the structure — what elements exist        | `.html`       |
+| CSS                     | Describes the appearance — colors, layout, spacing   | `.css`        |
 | JavaScript / TypeScript | Describes behavior — what happens when things change | `.ts` / `.js` |
 
 A browser reads all three and combines them into a visual page.
@@ -38,9 +38,9 @@ document
 JavaScript can read and change this tree at any time:
 
 ```ts
-const el = document.createElement("p");  // create a new node
-el.textContent = "Hello";                 // set its text
-document.body.append(el);                 // add it to the tree
+const el = document.createElement("p"); // create a new node
+el.textContent = "Hello"; // set its text
+document.body.append(el); // add it to the tree
 ```
 
 The browser immediately reflects those changes on screen. This is how UIs become dynamic — instead of reloading the whole page, JavaScript rewrites the parts that changed.
@@ -158,13 +158,17 @@ In this UI, data only moves in one direction: **from parent to child, as functio
 `renderReport` receives the full report and passes slices of it down:
 
 ```ts
-const renderReport = (root: HTMLElement, report: DevmetricsReport, onRefresh: () => void) => {
+const renderReport = (
+  root: HTMLElement,
+  report: DevmetricsReport,
+  onRefresh: () => void,
+) => {
   // ...
   for (const metric of report.metrics) {
-    metrics.append(renderMetric(metric));      // passes one MetricSummary down
+    metrics.append(renderMetric(metric)); // passes one MetricSummary down
   }
   for (const insight of report.insights) {
-    insights.append(renderInsight(insight));   // passes one Insight down
+    insights.append(renderInsight(insight)); // passes one Insight down
   }
   // ...
 };
@@ -203,9 +207,13 @@ A child component signals that something happened by calling a function it was g
 
 ```ts
 // renderReport does not know what "refresh" means
-const renderReport = (root: HTMLElement, report: DevmetricsReport, onRefresh: () => void) => {
+const renderReport = (
+  root: HTMLElement,
+  report: DevmetricsReport,
+  onRefresh: () => void,
+) => {
   const refreshButton = createElement("button", "refresh-button", "Refresh");
-  refreshButton.addEventListener("click", onRefresh);  // calls the callback, that's all
+  refreshButton.addEventListener("click", onRefresh); // calls the callback, that's all
   // ...
 };
 
@@ -214,7 +222,7 @@ const renderApp = async () => {
   appRoot.dataset.state = "loading";
   try {
     const report = await app.getReport();
-    renderReport(appRoot, report, renderApp);  // passes renderApp as the onRefresh callback
+    renderReport(appRoot, report, renderApp); // passes renderApp as the onRefresh callback
     appRoot.dataset.state = "ready";
   } catch (caught) {
     appRoot.dataset.state = "error";
@@ -260,19 +268,19 @@ State is any value that changes over time and affects what is displayed. In a si
 
 The boundary is the point where the outside world enters your app. Here, the outside world is the async call to `getReport()`. Before it resolves, the UI is in loading state. After it resolves, the UI is in ready state. If it rejects, the UI is in error state.
 
-The boundary is always where state should live — because state changes *because* of what happens at the boundary.
+The boundary is always where state should live — because state changes _because_ of what happens at the boundary.
 
 ```ts
 // index.ts: owns the boundary, owns the state
 const renderApp = async () => {
-  appRoot.dataset.state = "loading";          // state transition 1
+  appRoot.dataset.state = "loading"; // state transition 1
 
   try {
-    const report = await app.getReport();     // the boundary — async I/O
+    const report = await app.getReport(); // the boundary — async I/O
     renderReport(appRoot, report, renderApp);
-    appRoot.dataset.state = "ready";          // state transition 2
+    appRoot.dataset.state = "ready"; // state transition 2
   } catch (caught) {
-    appRoot.dataset.state = "error";          // state transition 3
+    appRoot.dataset.state = "error"; // state transition 3
     appRoot.textContent = caught instanceof Error ? caught.message : "Failed";
   }
 };
@@ -367,8 +375,10 @@ type AppState = {
   error: string | null;
 };
 
-const update = (state: AppState, newState: Partial<AppState>): AppState =>
-  ({ ...state, ...newState });
+const update = (state: AppState, newState: Partial<AppState>): AppState => ({
+  ...state,
+  ...newState,
+});
 
 const render = (root: HTMLElement, state: AppState) => {
   root.replaceChildren();
@@ -461,8 +471,8 @@ The `data-state` attribute on `#app` is set by TypeScript during loading and err
 
 ```ts
 appRoot.dataset.state = "loading"; // shows "Loading Construct..." via CSS
-appRoot.dataset.state = "ready";   // hides the loading message
-appRoot.dataset.state = "error";   // shows an error message
+appRoot.dataset.state = "ready"; // hides the loading message
+appRoot.dataset.state = "error"; // shows an error message
 ```
 
 CSS uses attribute selectors to respond:
@@ -479,9 +489,9 @@ This pattern avoids adding and removing elements for loading states — the stat
 
 ```ts
 const composeApp = (cfg: Partial<AppCfg> = {}) => {
-  const source        = cfg.source        ?? makeSampleDevmetricsSource();
+  const source = cfg.source ?? makeSampleDevmetricsSource();
   const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger        = cfg.logger        ?? consoleLogger;
+  const logger = cfg.logger ?? consoleLogger;
 
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 
@@ -585,9 +595,9 @@ When adding new layout sections, check both widths.
 
 ```ts
 export default defineConfig({
-  root: "src/ui",         // where index.html lives
+  root: "src/ui", // where index.html lives
   build: {
-    outDir: "../../dist/ui",  // where to emit production files
+    outDir: "../../dist/ui", // where to emit production files
   },
 });
 ```
@@ -615,14 +625,14 @@ make ui-build
 
 ### Safe change guide
 
-| What to change | Where to change it |
-|---|---|
-| Text, layout, colors | `src/ui/render/renderReport.ts`, `src/ui/styles.css` |
-| A specific render piece | `src/ui/render/renderMetric.ts`, `src/ui/render/renderInsight.ts`, `src/ui/render/renderSummary.ts` |
-| Metric data | `src/app/adapters/devmetrics/` |
-| Status rules (good/watch/risk) | `src/app/core/domain/devmetrics/makeDevmetrics.ts` |
-| Insights | `src/app/adapters/insights/` |
-| App wiring / default adapters | `src/app/compose.ts` (shared by CLI and UI) |
+| What to change                 | Where to change it                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Text, layout, colors           | `src/ui/render/renderReport.ts`, `src/ui/styles.css`                                                |
+| A specific render piece        | `src/ui/render/renderMetric.ts`, `src/ui/render/renderInsight.ts`, `src/ui/render/renderSummary.ts` |
+| Metric data                    | `src/app/adapters/devmetrics/`                                                                      |
+| Status rules (good/watch/risk) | `src/app/core/domain/devmetrics/makeDevmetrics.ts`                                                  |
+| Insights                       | `src/app/adapters/insights/`                                                                        |
+| App wiring / default adapters  | `src/app/compose.ts` (shared by CLI and UI)                                                         |
 
 ### When to add a framework
 
@@ -689,7 +699,7 @@ Some functions in the UI layer take data and return a primitive. They do not tou
 describe("formatDelta", () => {
   describe("given a metric that is exactly on target", () => {
     it("when called, then it returns 'On target'", () => {
-      const metric = makeTestMetric({ deltaFromTarget: 0 });
+      const metric = testMetric({ deltaFromTarget: 0 });
       expect(formatDelta(metric)).toBe("On target");
     });
   });
@@ -713,7 +723,7 @@ describe("renderInsight", () => {
   describe("given an insight with 'critical' severity", () => {
     it("when rendered, then the element has the insight-critical modifier class", () => {
       // Arrange
-      const insight = makeTestInsight({ severity: "critical" });
+      const insight = testInsight({ severity: "critical" });
 
       // Act
       const el = renderInsight(insight);
@@ -726,6 +736,7 @@ describe("renderInsight", () => {
 ```
 
 The test asks three questions:
+
 - Does the right element exist? (`querySelector` returning non-null)
 - Does it have the right class? (`el.className`, `.toContain`)
 - Does it show the right text? (`el.textContent`, `querySelector(".x")?.textContent`)
@@ -748,7 +759,9 @@ This is more involved than a pure render test, but it follows the same AAA struc
 Hard-coding full `MetricSummary` and `Insight` objects in every test is noisy and makes tests brittle when types change. The project uses fixture builders in `tests/helpers/testFixtures.ts`:
 
 ```ts
-export const makeTestMetric = (overrides: Partial<MetricSummary> = {}): MetricSummary => ({
+export const testMetric = (
+  overrides: Partial<MetricSummary> = {},
+): MetricSummary => ({
   id: "test-metric",
   label: "Test Metric",
   value: 8,
@@ -766,12 +779,12 @@ The function provides sensible defaults for every field. Tests pass only what th
 
 ```ts
 // Only the status matters for this test — everything else is irrelevant
-const metric = makeTestMetric({ status: "risk" });
+const metric = testMetric({ status: "risk" });
 ```
 
-If the `MetricSummary` type gains a new required field, you update `makeTestMetric` in one place and all tests continue to work. Without this, adding a field would require updating every test file that creates metric data.
+If the `MetricSummary` type gains a new required field, you update `testMetric` in one place and all tests continue to work. Without this, adding a field would require updating every test file that creates metric data.
 
-The same pattern exists for `makeTestInsight` and `makeTestReport`.
+The same pattern exists for `testInsight` and `testReport`.
 
 ### Testing callbacks
 
@@ -785,7 +798,7 @@ describe("given an onRefresh callback", () => {
     const root = document.createElement("div");
 
     // Act
-    renderReport(root, makeTestReport(), onRefresh);
+    renderReport(root, testReport(), onRefresh);
     root.querySelector<HTMLButtonElement>(".refresh-button")?.click();
 
     // Assert
@@ -808,15 +821,15 @@ This test verifies that `renderReport` correctly wires the button to the callbac
 
 ### Test file map
 
-| Test file | What it covers |
-|---|---|
-| `src/ui/render/dom.test.ts` | `createElement`, `appendChildren` |
-| `src/ui/render/renderApp.test.ts` | `makeRenderApp` — loading/ready/error state transitions, refresh loop |
-| `src/ui/render/renderMetric.test.ts` | `formatDelta`, `getProgressPercent`, `renderMetric` |
-| `src/ui/render/renderInsight.test.ts` | `renderInsight` |
-| `src/ui/render/renderSummary.test.ts` | `renderSummary` |
-| `src/ui/render/renderReport.test.ts` | `renderReport`, refresh callback wiring |
-| `src/app/core/domain/devmetrics/makeDevmetrics.test.ts` | `makeDevmetrics` (core domain) |
-| `src/app/adapters/insights/makeRuleBasedInsightEngine.test.ts` | `makeRuleBasedInsightEngine` (adapter) |
+| Test file                                                      | What it covers                                                        |
+| -------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/ui/render/dom.test.ts`                                    | `createElement`, `appendChildren`                                     |
+| `src/ui/render/renderApp.test.ts`                              | `makeRenderApp` — loading/ready/error state transitions, refresh loop |
+| `src/ui/render/renderMetric.test.ts`                           | `formatDelta`, `getProgressPercent`, `renderMetric`                   |
+| `src/ui/render/renderInsight.test.ts`                          | `renderInsight`                                                       |
+| `src/ui/render/renderSummary.test.ts`                          | `renderSummary`                                                       |
+| `src/ui/render/renderReport.test.ts`                           | `renderReport`, refresh callback wiring                               |
+| `src/app/core/domain/devmetrics/makeDevmetrics.test.ts`        | `makeDevmetrics` (core domain)                                        |
+| `src/app/adapters/insights/makeRuleBasedInsightEngine.test.ts` | `makeRuleBasedInsightEngine` (adapter)                                |
 
 Test fixtures shared across the UI tests live in `src/ui/render/testFixtures.ts`.

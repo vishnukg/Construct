@@ -40,8 +40,16 @@ const renderMetric = (metric: MetricSummary): HTMLElement => {
   const item = createElement("article", `metric metric-${metric.status}`);
   const header = createElement("div", "metric-header");
   const title = createElement("h2", undefined, metric.label);
-  const badge = createElement("span", "status-badge", statusLabel[metric.status]);
-  const value = createElement("p", "metric-value", `${metric.value} ${metric.unit}`);
+  const badge = createElement(
+    "span",
+    "status-badge",
+    statusLabel[metric.status],
+  );
+  const value = createElement(
+    "p",
+    "metric-value",
+    `${metric.value} ${metric.unit}`,
+  );
   const meta = createElement(
     "p",
     "metric-meta",

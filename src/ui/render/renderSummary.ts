@@ -2,7 +2,10 @@ import type { DevmetricsReport } from "../../app/core/index.ts";
 import { createElement } from "./dom.ts";
 
 const renderSummary = (report: DevmetricsReport): HTMLElement => {
-  const metricsByStatus = Object.groupBy(report.metrics, (metric) => metric.status);
+  const metricsByStatus = Object.groupBy(
+    report.metrics,
+    (metric) => metric.status,
+  );
   const riskCount = metricsByStatus.risk?.length ?? 0;
   const watchCount = metricsByStatus.watch?.length ?? 0;
   const goodCount = metricsByStatus.good?.length ?? 0;

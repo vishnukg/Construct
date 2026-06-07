@@ -7,7 +7,11 @@ import { testInsight, testMetric, testReport } from "./testFixtures.ts";
 test("renderReport: given two metrics, creates one card per metric", () => {
   const root = document.createElement("div");
 
-  renderReport(root, testReport({ metrics: [testMetric(), testMetric()], insights: [] }), () => {});
+  renderReport(
+    root,
+    testReport({ metrics: [testMetric(), testMetric()], insights: [] }),
+    () => {},
+  );
 
   expect(root.querySelectorAll(".metric")).toHaveLength(2);
 });
@@ -15,7 +19,11 @@ test("renderReport: given two metrics, creates one card per metric", () => {
 test("renderReport: given two insights, creates one entry per insight", () => {
   const root = document.createElement("div");
 
-  renderReport(root, testReport({ metrics: [], insights: [testInsight(), testInsight()] }), () => {});
+  renderReport(
+    root,
+    testReport({ metrics: [], insights: [testInsight(), testInsight()] }),
+    () => {},
+  );
 
   expect(root.querySelectorAll(".insight")).toHaveLength(2);
 });
@@ -24,7 +32,11 @@ test("renderReport: given existing root content, replaces it on render", () => {
   const root = document.createElement("div");
   root.innerHTML = "<p class='stale'>old content</p>";
 
-  renderReport(root, testReport({ metrics: [testMetric()], insights: [] }), () => {});
+  renderReport(
+    root,
+    testReport({ metrics: [testMetric()], insights: [] }),
+    () => {},
+  );
 
   expect(root.querySelector(".stale")).toBeNull();
 });

@@ -9,7 +9,11 @@ const severityLabel: Record<InsightSeverity, string> = {
 
 const renderInsight = (insight: Insight): HTMLElement => {
   const item = createElement("article", `insight insight-${insight.severity}`);
-  const severity = createElement("span", "insight-severity", severityLabel[insight.severity]);
+  const severity = createElement(
+    "span",
+    "insight-severity",
+    severityLabel[insight.severity],
+  );
   const title = createElement("h3", undefined, insight.title);
   const detail = createElement("p", undefined, insight.detail);
 
