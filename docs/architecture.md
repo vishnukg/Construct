@@ -21,14 +21,13 @@ src/
       devmetrics/             sample metrics source today; GitHub source later
       insights/               rules-based insight engine today; AI engine later
       logger/                 console logger
+    compose.ts                single composition root, reused by both entry points
   cli/
-    compose.ts                CLI composition root
     formatReport.ts           plain terminal report formatting
     index.ts                  executable entrypoint
   ui/
-    compose.ts                UI composition root
     index.ts                  browser entrypoint
-    renderReport.ts           DOM report rendering
+    render/                   DOM report rendering
     styles.css                dashboard styling
 ```
 
@@ -52,22 +51,33 @@ Adapters implement ports:
 - Future GitHub adapters should live under `src/app/adapters/github/` and implement `DevmetricsSource`.
 - Future AI adapters should implement `InsightEngine` without changing the report use case.
 
+## Composition root
+
+`src/app/compose.ts` is the single composition root for the app. Its `composeApp`
+function selects the default adapters and wires them into the core use case,
+returning the app surface (`{ getReport }`). Both entry points reuse it, so
+adapter selection and domain wiring live in exactly one place. Pass a partial
+`cfg` to `composeApp` to override any default (for example in tests).
+
+Because the CLI and UI differ only in how they _present_ the report — not in how
+the app is wired — there is no separate compose file per entry point. The
+presentation difference lives in each `index.ts` (see below). Keep provider
+setup in `compose.ts` or behind small adapter factories so presentation stays
+purely presentational.
+
 ## CLI
 
-The CLI is an edge adapter. It composes the core use case and prints a plain terminal report.
-
-`src/cli/compose.ts` is the composition root for CLI dependencies.
-It owns the default adapter wiring for the CLI and returns the CLI app surface.
-Keep provider setup there or behind small adapter factories so report formatting stays presentational.
+The CLI is an edge entry point. It calls `composeApp()` and prints a plain
+terminal report via `formatReport`.
 
 ## UI
 
-The UI is a separate browser entrypoint built with Vite and vanilla TypeScript.
-It reuses the same core use case and current adapters as the CLI, then renders the report into DOM elements instead of terminal text.
+The UI is a separate browser entry point built with Vite and vanilla TypeScript.
+It calls the same `composeApp()` and renders the report into DOM elements via
+`makeRenderApp` instead of terminal text.
 
-`src/ui/compose.ts` is the composition root for browser dependencies.
-It owns the default adapter wiring for the browser UI and returns the UI app surface.
-The UI build can be deployed separately from the CLI because Vite emits static browser assets while the CLI build emits a Node executable.
+The UI build can be deployed separately from the CLI because Vite emits static
+browser assets while the CLI build emits a Node executable.
 
 ## AI Direction
 

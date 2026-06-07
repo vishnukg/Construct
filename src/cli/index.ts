@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import composeApp from "./compose.ts";
+import composeApp from "../app/compose.ts";
 import formatReport from "./formatReport.ts";
 
 const app = composeApp();

@@ -2,11 +2,11 @@
 
 import { expect, test, vi } from "vitest";
 import makeRenderApp from "./renderApp.ts";
-import { makeTestReport } from "./testFixtures.ts";
+import { testReport } from "./testFixtures.ts";
 
 test("makeRenderApp: given a resolving getReport, sets data-state to loading before it resolves", async () => {
   const root = document.createElement("div");
-  const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport()));
+  const renderApp = makeRenderApp(root, vi.fn(async () => testReport()));
 
   const promise = renderApp();
 
@@ -16,7 +16,7 @@ test("makeRenderApp: given a resolving getReport, sets data-state to loading bef
 
 test("makeRenderApp: given a resolving getReport, sets data-state to ready after it resolves", async () => {
   const root = document.createElement("div");
-  const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport()));
+  const renderApp = makeRenderApp(root, vi.fn(async () => testReport()));
 
   await renderApp();
 
@@ -25,7 +25,7 @@ test("makeRenderApp: given a resolving getReport, sets data-state to ready after
 
 test("makeRenderApp: given a resolving getReport, renders the report into the root element", async () => {
   const root = document.createElement("div");
-  const renderApp = makeRenderApp(root, vi.fn(async () => makeTestReport({
+  const renderApp = makeRenderApp(root, vi.fn(async () => testReport({
     metrics: [{ id: "m1", label: "Test", value: 5, unit: "days", target: 3, trend: "up", lowerIsBetter: true, status: "risk", deltaFromTarget: 2 }],
     insights: [],
   })));
@@ -65,7 +65,7 @@ test("makeRenderApp: given getReport rejects with a non-Error value, shows the f
 
 test("makeRenderApp: given a second invocation, calls getReport again", async () => {
   const root = document.createElement("div");
-  const getReport = vi.fn(async () => makeTestReport());
+  const getReport = vi.fn(async () => testReport());
   const renderApp = makeRenderApp(root, getReport);
 
   await renderApp();

@@ -4,7 +4,7 @@ import type {
   MetricSummary,
 } from "../../app/core/index.ts";
 
-export const makeTestMetric = (overrides: Partial<MetricSummary> = {}): MetricSummary => ({
+export const testMetric = (overrides: Partial<MetricSummary> = {}): MetricSummary => ({
   id: "test-metric",
   label: "Test Metric",
   value: 8,
@@ -17,7 +17,7 @@ export const makeTestMetric = (overrides: Partial<MetricSummary> = {}): MetricSu
   ...overrides,
 });
 
-export const makeTestInsight = (overrides: Partial<Insight> = {}): Insight => ({
+export const testInsight = (overrides: Partial<Insight> = {}): Insight => ({
   title: "Test Insight",
   detail: "This is a test insight detail.",
   severity: "info",
@@ -25,9 +25,9 @@ export const makeTestInsight = (overrides: Partial<Insight> = {}): Insight => ({
   ...overrides,
 });
 
-export const makeTestReport = (overrides: Partial<DevmetricsReport> = {}): DevmetricsReport => ({
+export const testReport = (overrides: Partial<DevmetricsReport> = {}): DevmetricsReport => ({
   generatedAt: new Date("2026-01-01T00:00:00Z"),
-  metrics: [makeTestMetric()],
-  insights: [makeTestInsight()],
+  metrics: [testMetric()],
+  insights: [testInsight()],
   ...overrides,
 });

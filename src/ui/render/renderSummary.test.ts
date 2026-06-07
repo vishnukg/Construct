@@ -2,15 +2,15 @@
 
 import { expect, test } from "vitest";
 import renderSummary from "./renderSummary.ts";
-import { makeTestMetric, makeTestReport } from "./testFixtures.ts";
+import { testMetric, testReport } from "./testFixtures.ts";
 
 test("renderSummary: given metrics of mixed statuses, counts risk, watch, good, and total correctly", () => {
-  const report = makeTestReport({
+  const report = testReport({
     metrics: [
-      makeTestMetric({ status: "risk" }),
-      makeTestMetric({ status: "risk" }),
-      makeTestMetric({ status: "watch" }),
-      makeTestMetric({ status: "good" }),
+      testMetric({ status: "risk" }),
+      testMetric({ status: "risk" }),
+      testMetric({ status: "watch" }),
+      testMetric({ status: "good" }),
     ],
     insights: [],
   });
@@ -24,8 +24,8 @@ test("renderSummary: given metrics of mixed statuses, counts risk, watch, good, 
 });
 
 test("renderSummary: given all good metrics, shows zero for risk and watch", () => {
-  const report = makeTestReport({
-    metrics: [makeTestMetric({ status: "good" }), makeTestMetric({ status: "good" })],
+  const report = testReport({
+    metrics: [testMetric({ status: "good" }), testMetric({ status: "good" })],
     insights: [],
   });
 
@@ -37,7 +37,7 @@ test("renderSummary: given all good metrics, shows zero for risk and watch", () 
 });
 
 test("renderSummary: given no metrics, shows all zeros", () => {
-  const report = makeTestReport({ metrics: [], insights: [] });
+  const report = testReport({ metrics: [], insights: [] });
 
   const items = renderSummary(report).querySelectorAll(".summary-item");
 

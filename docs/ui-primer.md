@@ -236,9 +236,9 @@ The parent (`index.ts`) is the place that knows about loading state, error handl
 
 **The anti-pattern: a child that reaches up**
 
-Imagine if the refresh button's handler directly called `composeUiApp()` from inside `renderReport`. Now:
+Imagine if the refresh button's handler directly called `composeApp()` from inside `renderReport`. Now:
 
-- `renderReport` imports from `compose.ts`, coupling a display function to the app's wiring
+- `renderReport` imports from `src/app/compose.ts`, coupling a display function to the app's wiring
 - There is no way to test the refresh button without a full browser environment and the real app composition
 - The behavior of the button is hidden inside a render function where no one would think to look for it
 
@@ -409,21 +409,20 @@ src/ui/index.html
 src/ui/index.ts
   browser entrypoint; owns state and the async boundary
 
-src/ui/compose.ts
-  wires app dependencies for the browser
-
-src/ui/render*.ts
+src/ui/render/*.ts
   pure functions: take report data, return DOM elements
 
 src/ui/styles.css
   controls layout, spacing, color, and responsive behavior
 ```
 
-The UI reuses the same application layer as the CLI:
+The UI reuses the same application layer as the CLI, including the single
+composition root:
 
 ```text
 src/app/core      report logic and types
 src/app/adapters  sample metrics source, insight engine, logger
+src/app/compose.ts  wires adapters into the core use case (shared by CLI and UI)
 ```
 
 CLI and UI share the same report-building behavior. They differ only in how they display the result: CLI prints plain text, UI builds DOM nodes.
@@ -437,7 +436,7 @@ When the page loads, this sequence runs:
 2. Browser sees <script type="module" src="/index.ts">
 3. Vite compiles index.ts and its imports
 4. index.ts finds the #app element
-5. index.ts calls compose.ts to get getReport()
+5. index.ts calls composeApp() (from src/app/compose.ts) to get getReport()
 6. index.ts sets data-state="loading" on #app
 7. index.ts calls getReport(), which fetches metrics and insights from adapters
 8. index.ts sets data-state="ready" and passes the report to renderReport()
@@ -476,20 +475,29 @@ CSS uses attribute selectors to respond:
 
 This pattern avoids adding and removing elements for loading states — the state lives on the existing element and CSS handles the display.
 
-### Compose (`src/ui/compose.ts`)
+### Compose (`src/app/compose.ts`, shared)
 
 ```ts
-const source = makeSampleDevmetricsSource();
-const insightEngine = makeRuleBasedInsightEngine();
-const logger = consoleLogger;
-const getReport = makeDevmetrics({ source, insightEngine, logger });
+const composeApp = (cfg: Partial<AppCfg> = {}) => {
+  const source        = cfg.source        ?? makeSampleDevmetricsSource();
+  const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
+  const logger        = cfg.logger        ?? consoleLogger;
 
-return { getReport };
+  const getReport = makeDevmetrics({ source, insightEngine, logger });
+
+  return { getReport };
+};
 ```
 
-`compose.ts` is the place where browser-specific dependencies are wired together. It is the only file in `src/ui/` that imports from `src/app/`. All other render files receive data as function arguments and do not touch the app layer directly.
+`src/app/compose.ts` is the single place where dependencies are wired together —
+the CLI and UI share it, because they wire the app identically and differ only
+in how they present the report. `src/ui/index.ts` is the only file in `src/ui/`
+that imports it; all render files receive data as function arguments and do not
+touch the app layer directly.
 
-If the UI later needs browser-specific adapters, they belong here:
+If the UI later needs genuinely browser-specific adapters (ones the CLI must not
+use), pass them in via `composeApp(cfg)` from `src/ui/index.ts` rather than
+re-introducing a per-edge compose file:
 
 ```text
 localStorage settings adapter
@@ -609,12 +617,12 @@ make ui-build
 
 | What to change | Where to change it |
 |---|---|
-| Text, layout, colors | `src/ui/renderReport.ts`, `src/ui/styles.css` |
-| A specific render piece | `src/ui/renderMetric.ts`, `src/ui/renderInsight.ts`, `src/ui/renderSummary.ts` |
+| Text, layout, colors | `src/ui/render/renderReport.ts`, `src/ui/styles.css` |
+| A specific render piece | `src/ui/render/renderMetric.ts`, `src/ui/render/renderInsight.ts`, `src/ui/render/renderSummary.ts` |
 | Metric data | `src/app/adapters/devmetrics/` |
 | Status rules (good/watch/risk) | `src/app/core/domain/devmetrics/makeDevmetrics.ts` |
 | Insights | `src/app/adapters/insights/` |
-| Browser-specific wiring | `src/ui/compose.ts` |
+| App wiring / default adapters | `src/app/compose.ts` (shared by CLI and UI) |
 
 ### When to add a framework
 
@@ -796,19 +804,19 @@ This test verifies that `renderReport` correctly wires the button to the callbac
 
 **Do not exhaustively test element structure.** If `renderMetric` creates an `article` element, you do not need a test that asserts `el.tagName === "ARTICLE"`. Test the meaningful behavior: the right class for the right status, the right text for the label and value. Trust `createElement` — it is already tested in `dom.test.ts`.
 
-**Do not test `compose.ts`.** It wires known-good pieces together. The composition is validated by the app running correctly. A unit test here would just duplicate what the other tests already cover.
+**Do not test `src/app/compose.ts`.** It wires known-good pieces together. The composition is validated by the app running correctly. A unit test here would just duplicate what the other tests already cover.
 
 ### Test file map
 
 | Test file | What it covers |
 |---|---|
-| `src/ui/dom.test.ts` | `createElement`, `appendChildren` |
-| `src/ui/renderApp.test.ts` | `makeRenderApp` — loading/ready/error state transitions, refresh loop |
-| `src/ui/renderMetric.test.ts` | `formatDelta`, `getProgressPercent`, `renderMetric` |
-| `src/ui/renderInsight.test.ts` | `renderInsight` |
-| `src/ui/renderSummary.test.ts` | `renderSummary` |
-| `src/ui/renderReport.test.ts` | `renderReport`, refresh callback wiring |
+| `src/ui/render/dom.test.ts` | `createElement`, `appendChildren` |
+| `src/ui/render/renderApp.test.ts` | `makeRenderApp` — loading/ready/error state transitions, refresh loop |
+| `src/ui/render/renderMetric.test.ts` | `formatDelta`, `getProgressPercent`, `renderMetric` |
+| `src/ui/render/renderInsight.test.ts` | `renderInsight` |
+| `src/ui/render/renderSummary.test.ts` | `renderSummary` |
+| `src/ui/render/renderReport.test.ts` | `renderReport`, refresh callback wiring |
 | `src/app/core/domain/devmetrics/makeDevmetrics.test.ts` | `makeDevmetrics` (core domain) |
 | `src/app/adapters/insights/makeRuleBasedInsightEngine.test.ts` | `makeRuleBasedInsightEngine` (adapter) |
 
-Test fixtures shared across the UI tests live in `src/ui/testFixtures.ts`.
+Test fixtures shared across the UI tests live in `src/ui/render/testFixtures.ts`.

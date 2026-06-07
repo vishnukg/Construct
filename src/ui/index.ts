@@ -1,5 +1,5 @@
 import "./styles.css";
-import composeApp from "./compose.ts";
+import composeApp from "../app/compose.ts";
 import makeRenderApp from "./render/renderApp.ts";
 
 const appRoot = document.querySelector<HTMLElement>("#app");

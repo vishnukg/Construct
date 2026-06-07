@@ -83,36 +83,60 @@ call the relevant renderer or command
 ```
 
 Entrypoints should not contain business rules or concrete provider setup.
-Put provider setup in the matching `compose.ts`.
+Put provider setup in the composition root, `src/app/compose.ts`.
 
 ## Compose Functions
 
-Compose functions are edge composition roots.
-They wire concrete adapters to core use cases and return the public app surface for that edge.
+A `compose*` function is a **composition root**: it selects/builds concrete
+adapters (by calling `make*` factories), wires them into core use cases, and
+returns the public app surface.
 
-Example shape:
+This app has **one** composition root — `src/app/compose.ts` — reused by both
+entry points. The CLI and UI differ only in how they _present_ the report, not
+in how the app is wired, so there is no per-entry compose file; the presentation
+difference lives in each `index.ts`.
+
+Example shape — `composeApp` selects the concrete adapters (that is the
+composition root's job) and wires them into the core use case:
 
 ```ts
-const composeApp = (cfg: AppCfg = makeDefaultCfg()) => {
-  const { source, insightEngine, logger } = cfg;
+const composeApp = (cfg: Partial<AppCfg> = {}) => {
+  const source        = cfg.source        ?? makeSampleDevmetricsSource();
+  const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
+  const logger        = cfg.logger        ?? consoleLogger;
+
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 
   return { getReport };
 };
 ```
 
-The default config is built with concrete adapters.
-The optional config keeps the app easy to test and easy to override later.
+The defaults are concrete adapters; passing a partial `cfg` overrides any of them
+(e.g. in tests). Compose functions return whatever the caller needs — usually a
+named bucket of capabilities (`{ getReport }`). If more capabilities are added,
+extend the returned object deliberately.
 
-Compose functions may return a bucket of capabilities:
+### make vs compose: the one test that decides it
 
-```ts
-return {
-  getReport,
-};
-```
+Open the function body and ask:
 
-If more capabilities are added, extend the returned object deliberately.
+> **Does it call another factory (`make*` / `compose*`) to build one of its parts?**
+>
+> - **No** → it's a **`make*`**. Its work is written inline; it just uses the
+>   dependencies it is handed. (`makeDevmetrics`, `makeRuleBasedInsightEngine`,
+>   `makeSampleDevmetricsSource`, `makeRenderApp`.)
+> - **Yes** → it's a **`compose*`**. It calls other factories and/or selects
+>   concrete adapters, then wires them. (`composeApp`.)
+
+The deciding factor is _calling other factories_, **not** the return type — a
+`compose*` may return a single port or a bag of peers. `makeDevmetrics` is a
+`make*` because it receives `source`/`insightEngine`/`logger` ready-made and
+defines `getReport` inline; `composeApp` is a `compose*` because it builds those
+adapters and wires them in.
+
+(For functions that are neither — plain data transforms like `formatReport` or
+the private `riskInsight` helpers — see **render Functions** below: no `make*` /
+`compose*` prefix, because they build data, not ports.)
 
 ## make Functions
 
@@ -213,8 +237,7 @@ Keep it simple while the product surface is small.
 Use:
 
 ```text
-src/ui/index.ts        browser startup
-src/ui/compose.ts      browser dependency wiring
+src/ui/index.ts        browser startup (calls the shared src/app/compose.ts)
 src/ui/render/         DOM creation
 src/ui/styles.css      styling and responsive layout
 ```
