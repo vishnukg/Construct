@@ -21,11 +21,12 @@ src/
       devmetrics/             sample metrics source today; GitHub source later
       insights/               rules-based insight engine today; AI engine later
       logger/                 console logger
-    compose.ts                single composition root, reused by both entry points
   cli/
+    compose.ts                CLI composition root
     formatReport.ts           plain terminal report formatting
     index.ts                  executable entrypoint
   ui/
+    compose.ts                browser composition root
     index.ts                  browser entrypoint
     render/                   DOM report rendering
     styles.css                dashboard styling
@@ -51,30 +52,32 @@ Adapters implement ports:
 - Future GitHub adapters should live under `src/app/adapters/github/` and implement `DevmetricsSource`.
 - Future AI adapters should implement `InsightEngine` without changing the report use case.
 
-## Composition root
+## Composition Roots
 
-`src/app/compose.ts` is the single composition root for the app. Its `composeApp`
-function selects the default adapters and wires them into the core use case,
-returning the app surface (`{ getReport }`). Both entry points reuse it, so
-adapter selection and domain wiring live in exactly one place. Pass a partial
-`cfg` to `composeApp` to override any default (for example in tests).
+Construct has one composition root per entry point:
 
-Because the CLI and UI differ only in how they _present_ the report — not in how
-the app is wired — there is no separate compose file per entry point. The
-presentation difference lives in each `index.ts` (see below). Keep provider
-setup in `compose.ts` or behind small adapter factories so presentation stays
-purely presentational.
+- `src/cli/compose.ts` builds the report use case and wraps it with the CLI
+  surface (`{ cli }`).
+- `src/ui/compose.ts` builds the report use case and wraps it with the browser
+  render loop (`{ renderApp }`).
+
+The entry points select concrete adapters and pass them to compose. The compose
+files wire those dependencies into `makeDevmetrics` and differ only in the
+driving adapter they expose. Keep provider construction in `index.ts` or behind
+small adapter factories, and keep `compose.ts` focused on wiring.
 
 ## CLI
 
-The CLI is an edge entry point. It calls `composeApp()` and prints a plain
-terminal report via `formatReport`.
+The CLI is an edge entry point. It builds the concrete source, insight engine,
+and logger, calls `composeCliApp(...)`, and prints the line returned by
+`cli.run()`.
 
 ## UI
 
 The UI is a separate browser entry point built with Vite and vanilla TypeScript.
-It calls the same `composeApp()` and renders the report into DOM elements via
-`makeRenderApp` instead of terminal text.
+It builds the concrete source, insight engine, and logger, calls
+`composeUiApp({ root, source, insightEngine, logger })`, and invokes the returned
+`renderApp`.
 
 The UI build can be deployed separately from the CLI because Vite emits static
 browser assets while the CLI build emits a Node executable.

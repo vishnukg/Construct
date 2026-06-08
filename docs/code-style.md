@@ -83,7 +83,8 @@ call the relevant renderer or command
 ```
 
 Entrypoints should not contain business rules or concrete provider setup.
-Put provider setup in the composition root, `src/app/compose.ts`.
+They may read runtime state and choose concrete adapters. Put wiring in the
+relevant composition root (`src/cli/compose.ts` or `src/ui/compose.ts`).
 
 ## Compose Functions
 
@@ -91,30 +92,26 @@ A `compose*` function is a **composition root**: it selects/builds concrete
 adapters (by calling `make*` factories), wires them into core use cases, and
 returns the public app surface.
 
-This app has **one** composition root — `src/app/compose.ts` — reused by both
-entry points. The CLI and UI differ only in how they _present_ the report, not
-in how the app is wired, so there is no per-entry compose file; the presentation
-difference lives in each `index.ts`.
+This app has **one composition root per entry point**:
 
-Example shape — `composeApp` selects the concrete adapters (that is the
-composition root's job) and wires them into the core use case:
+- `src/cli/compose.ts` wires the report use case and exposes `{ cli }`.
+- `src/ui/compose.ts` wires the report use case and exposes `{ renderApp }`.
+
+Example shape — the entry point selects concrete adapters, while `composeCliApp`
+wires those dependencies into the core use case and returns the CLI surface:
 
 ```ts
-const composeApp = (cfg: Partial<AppCfg> = {}) => {
-  const source = cfg.source ?? makeSampleDevmetricsSource();
-  const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger = cfg.logger ?? makeConsoleLogger();
-
+const composeCliApp = ({ source, insightEngine, logger }: CliAppCfg) => {
   const getReport = makeDevmetrics({ source, insightEngine, logger });
+  const cli = { run: async () => formatReport(await getReport()) };
 
-  return { getReport };
+  return { cli };
 };
 ```
 
-The defaults are concrete adapters; passing a partial `cfg` overrides any of them
-(e.g. in tests). Compose functions return whatever the caller needs — usually a
-named bucket of capabilities (`{ getReport }`). If more capabilities are added,
-extend the returned object deliberately.
+Compose functions return whatever the caller needs — usually a named bucket of
+capabilities (`{ cli }`, `{ renderApp }`). If more capabilities are added, extend
+the returned object deliberately.
 
 ### make vs compose: the one test that decides it
 
@@ -126,13 +123,13 @@ Open the function body and ask:
 >   dependencies it is handed. (`makeDevmetrics`, `makeRuleBasedInsightEngine`,
 >   `makeSampleDevmetricsSource`, `makeRenderApp`.)
 > - **Yes** → it's a **`compose*`**. It calls other factories and/or selects
->   concrete adapters, then wires them. (`composeApp`.)
+>   concrete adapters, then wires them. (`composeCliApp`, `composeUiApp`.)
 
 The deciding factor is _calling other factories_, **not** the return type — a
 `compose*` may return a single port or a bag of peers. `makeDevmetrics` is a
 `make*` because it receives `source`/`insightEngine`/`logger` ready-made and
-defines `getReport` inline; `composeApp` is a `compose*` because it builds those
-adapters and wires them in.
+defines `getReport` inline; `composeCliApp` and `composeUiApp` are `compose*`
+functions because they build those adapters and wire them in.
 
 (For functions that are neither — plain data transforms like `formatReport` or
 the private `riskInsight` helpers — see **render Functions** below: no `make*` /
@@ -149,7 +146,8 @@ it produces, not for an action.**
   for the port it returns.
 - A `make*` may return a **single-operation port** (a function) instead of a
   multi-method object — that is fine. `makeDevmetrics` returns the
-  `getDevmetricsReport` operation; `composeApp` then exposes it as `{ getReport }`.
+  `getDevmetricsReport` operation; the compose functions expose entry-specific
+  surfaces such as `{ cli }` or `{ renderApp }`.
   The factory is named for its domain (`Devmetrics`), the operation it returns is
   the verb (`getReport`).
 - `makeRenderApp` is the one factory named after an action rather than a noun. It
@@ -307,16 +305,17 @@ a.info === b.info; // false — distinct function objects per call
 ```
 
 **Why it doesn't matter in this app.** Every `make*` here runs **once, at startup**,
-inside `composeApp`. One `DevmetricsSource`, one `InsightEngine`, one `Logger`, one
-`renderApp` — built when the app boots and reused for its whole life. The per-
-instance cost is paid a handful of times, total: kilobytes at boot, below noise.
+inside the relevant entry-point compose function. One `DevmetricsSource`, one
+`InsightEngine`, one `Logger`, and one entry surface are built when the app boots
+and reused for its whole life. The per-instance cost is paid a handful of times,
+total: kilobytes at boot, below noise.
 
 **When it would matter, and how to optimise.** Only if a `make*` is called on a hot
 path (per request, per tick, in a tight loop). In order of preference:
 
 1. **Hoist it.** Build once outside the loop and reuse — which is exactly what
-   `composeApp` already does, and why the UI builds `renderApp` once rather than per
-   refresh.
+   the compose functions already do, and why the UI builds `renderApp` once rather
+   than per refresh.
 2. **Drop the closure** — use a plain function that takes its deps as arguments
    (`getReport(deps, …)`); one function object for the whole process, nothing
    allocated per call. This is the `render*` style: plain transforms, no closure.
@@ -330,9 +329,9 @@ points at factory allocation, not preemptively.
 ### Is this production-safe?
 
 For this codebase: yes, and closures are not the thing to watch. Every factory is a
-startup singleton (`composeApp` runs once; the UI builds `renderApp` once and reuses
-it on refresh), so no factory runs on a hot path and no closure is rebuilt per
-report. The real production watch-items live elsewhere:
+startup singleton (`composeCliApp` or `composeUiApp` runs once; the UI builds
+`renderApp` once and reuses it on refresh), so no factory runs on a hot path and
+no closure is rebuilt per report. The real production watch-items live elsewhere:
 
 - **`makeSampleDevmetricsSource` is a stub** — it returns canned data. A real
   deployment needs a source backed by an actual provider (and that adapter is where
@@ -370,7 +369,8 @@ Keep it simple while the product surface is small.
 Use:
 
 ```text
-src/ui/index.ts        browser startup (calls the shared src/app/compose.ts)
+src/ui/compose.ts      browser composition root
+src/ui/index.ts        browser startup
 src/ui/render/         DOM creation
 src/ui/styles.css      styling and responsive layout
 ```

@@ -244,9 +244,9 @@ The parent (`index.ts`) is the place that knows about loading state, error handl
 
 **The anti-pattern: a child that reaches up**
 
-Imagine if the refresh button's handler directly called `composeApp()` from inside `renderReport`. Now:
+Imagine if the refresh button's handler directly called `composeUiApp()` from inside `renderReport`. Now:
 
-- `renderReport` imports from `src/app/compose.ts`, coupling a display function to the app's wiring
+- `renderReport` imports from `src/ui/compose.ts`, coupling a display function to the app's wiring
 - There is no way to test the refresh button without a full browser environment and the real app composition
 - The behavior of the button is hidden inside a render function where no one would think to look for it
 
@@ -426,16 +426,17 @@ src/ui/styles.css
   controls layout, spacing, color, and responsive behavior
 ```
 
-The UI reuses the same application layer as the CLI, including the single
+The UI reuses the same core report-building layer as the CLI, but has its own
 composition root:
 
 ```text
 src/app/core      report logic and types
 src/app/adapters  sample metrics source, insight engine, logger
-src/app/compose.ts  wires adapters into the core use case (shared by CLI and UI)
+src/ui/compose.ts   wires adapters into the core use case and render loop
 ```
 
-CLI and UI share the same report-building behavior. They differ only in how they display the result: CLI prints plain text, UI builds DOM nodes.
+CLI and UI share the same report-building behavior. They differ in the entry
+surface they compose: CLI prints plain text, UI builds DOM nodes.
 
 ### How a render cycle works
 
@@ -446,15 +447,17 @@ When the page loads, this sequence runs:
 2. Browser sees <script type="module" src="/index.ts">
 3. Vite compiles index.ts and its imports
 4. index.ts finds the #app element
-5. index.ts calls composeApp() (from src/app/compose.ts) to get getReport()
-6. index.ts sets data-state="loading" on #app
-7. index.ts calls getReport(), which fetches metrics and insights from adapters
-8. index.ts sets data-state="ready" and passes the report to renderReport()
-9. renderReport() creates DOM nodes and appends them to #app
-10. The page is visible
+5. index.ts builds the source, insight engine, and logger
+6. index.ts calls composeUiApp({ root, source, insightEngine, logger }) to get renderApp()
+7. index.ts calls renderApp()
+8. renderApp sets data-state="loading" on #app
+9. renderApp calls getReport(), which fetches metrics and insights from adapters
+10. renderApp sets data-state="ready" and passes the report to renderReport()
+11. renderReport() creates DOM nodes and appends them to #app
+12. The page is visible
 ```
 
-When the user clicks Refresh, steps 6–9 repeat. The root element is cleared and rebuilt from scratch.
+When the user clicks Refresh, steps 8–11 repeat. The root element is cleared and rebuilt from scratch.
 
 ### HTML (`src/ui/index.html`)
 
@@ -485,29 +488,24 @@ CSS uses attribute selectors to respond:
 
 This pattern avoids adding and removing elements for loading states — the state lives on the existing element and CSS handles the display.
 
-### Compose (`src/app/compose.ts`, shared)
+### Compose (`src/ui/compose.ts`)
 
 ```ts
-const composeApp = (cfg: Partial<AppCfg> = {}) => {
-  const source = cfg.source ?? makeSampleDevmetricsSource();
-  const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger = cfg.logger ?? makeConsoleLogger();
-
+const composeUiApp = ({ root, source, insightEngine, logger }: UiAppCfg) => {
   const getReport = makeDevmetrics({ source, insightEngine, logger });
+  const renderApp = makeRenderApp(root, getReport);
 
-  return { getReport };
+  return { renderApp };
 };
 ```
 
-`src/app/compose.ts` is the single place where dependencies are wired together —
-the CLI and UI share it, because they wire the app identically and differ only
-in how they present the report. `src/ui/index.ts` is the only file in `src/ui/`
-that imports it; all render files receive data as function arguments and do not
-touch the app layer directly.
+`src/ui/compose.ts` is the browser composition root. It receives concrete
+adapters from `src/ui/index.ts`, wires them into `makeDevmetrics`, then wires the
+resulting `getReport` operation into `makeRenderApp`. All render files receive
+data as function arguments and do not touch app wiring directly.
 
 If the UI later needs genuinely browser-specific adapters (ones the CLI must not
-use), pass them in via `composeApp(cfg)` from `src/ui/index.ts` rather than
-re-introducing a per-edge compose file:
+use), build them in `src/ui/index.ts` and pass them to `src/ui/compose.ts`:
 
 ```text
 localStorage settings adapter
@@ -632,7 +630,8 @@ make ui-build
 | Metric data                    | `src/app/adapters/devmetrics/`                                                                      |
 | Status rules (good/watch/risk) | `src/app/core/domain/devmetrics/makeDevmetrics.ts`                                                  |
 | Insights                       | `src/app/adapters/insights/`                                                                        |
-| App wiring / default adapters  | `src/app/compose.ts` (shared by CLI and UI)                                                         |
+| App wiring                     | `src/cli/compose.ts`, `src/ui/compose.ts`                                                           |
+| Default adapters               | `src/cli/index.ts`, `src/ui/index.ts`                                                               |
 
 ### When to add a framework
 
@@ -817,7 +816,7 @@ This test verifies that `renderReport` correctly wires the button to the callbac
 
 **Do not exhaustively test element structure.** If `renderMetric` creates an `article` element, you do not need a test that asserts `el.tagName === "ARTICLE"`. Test the meaningful behavior: the right class for the right status, the right text for the label and value. Trust `createElement` — it is already tested in `dom.test.ts`.
 
-**Do not test `src/app/compose.ts`.** It wires known-good pieces together. The composition is validated by the app running correctly. A unit test here would just duplicate what the other tests already cover.
+**Do not exhaustively test compose files.** They wire known-good pieces together. The composition is validated by the app running correctly. A unit test here would usually duplicate what the other tests already cover.
 
 ### Test file map
 
