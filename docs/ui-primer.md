@@ -491,7 +491,7 @@ This pattern avoids adding and removing elements for loading states — the stat
 const composeApp = (cfg: Partial<AppCfg> = {}) => {
   const source = cfg.source ?? makeSampleDevmetricsSource();
   const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger = cfg.logger ?? consoleLogger;
+  const logger = cfg.logger ?? makeConsoleLogger();
 
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 

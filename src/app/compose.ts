@@ -2,7 +2,7 @@ import { makeDevmetrics } from "./core/index.ts";
 import type { Logger, DevmetricsSource, InsightEngine } from "./core/index.ts";
 import makeSampleDevmetricsSource from "./adapters/devmetrics/makeSampleDevmetricsSource.ts";
 import makeRuleBasedInsightEngine from "./adapters/insights/makeRuleBasedInsightEngine.ts";
-import consoleLogger from "./adapters/logger/consoleLogger.ts";
+import makeConsoleLogger from "./adapters/logger/makeConsoleLogger.ts";
 
 export type AppCfg = {
   source: DevmetricsSource;
@@ -19,7 +19,7 @@ export type AppCfg = {
 const composeApp = (cfg: Partial<AppCfg> = {}) => {
   const source = cfg.source ?? makeSampleDevmetricsSource();
   const insightEngine = cfg.insightEngine ?? makeRuleBasedInsightEngine();
-  const logger = cfg.logger ?? consoleLogger;
+  const logger = cfg.logger ?? makeConsoleLogger();
 
   const getReport = makeDevmetrics({ source, insightEngine, logger });
 

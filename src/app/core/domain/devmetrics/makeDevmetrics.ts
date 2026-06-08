@@ -57,20 +57,30 @@ const makeDevmetrics = ({
   const getDevmetricsReport = async (): Promise<DevmetricsReport> => {
     logger.info("devmetrics.report.started");
 
-    const rawMetrics = await source.listMetrics();
-    const metrics = rawMetrics.map(summarizeMetric);
-    const insights = await insightEngine.summarize(rawMetrics);
+    try {
+      const rawMetrics = await source.listMetrics();
+      const metrics = rawMetrics.map(summarizeMetric);
+      const insights = await insightEngine.summarize(rawMetrics);
 
-    logger.info("devmetrics.report.completed", {
-      metricCount: metrics.length,
-      insightCount: insights.length,
-    });
+      logger.info("devmetrics.report.completed", {
+        metricCount: metrics.length,
+        insightCount: insights.length,
+      });
 
-    return {
-      generatedAt: now(),
-      metrics,
-      insights,
-    };
+      return {
+        generatedAt: now(),
+        metrics,
+        insights,
+      };
+    } catch (caught) {
+      // Infrastructure failure (source or insight engine threw). Log it with
+      // context for observability, then re-throw — the entry points (cli, ui)
+      // own how the failure is surfaced to the user.
+      logger.error("devmetrics.report.failed", {
+        message: caught instanceof Error ? caught.message : String(caught),
+      });
+      throw caught;
+    }
   };
 
   return getDevmetricsReport;

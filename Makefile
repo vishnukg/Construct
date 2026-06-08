@@ -9,7 +9,7 @@ RUN_WITH_SERVICE_PORTS := $(DOCKER_COMPOSE) run --rm --service-ports $(SERVICE)
 
 .PHONY: all help install update-deps cli ui ui-build typecheck test lint security-audit format format-check build shell clean compose-config
 
-all: install typecheck lint test build ## Run the local verification pipeline
+all: install format-check typecheck lint test build ## Run the local verification pipeline
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"; printf "\nConstruct targets:\n"} /^[a-zA-Z_-]+:.*?##/ {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)

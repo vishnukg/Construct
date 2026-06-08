@@ -84,3 +84,46 @@ test("makeDevmetrics: given a metrics source, forwards raw metrics to the insigh
     },
   ]);
 });
+
+test("makeDevmetrics: when the source throws, logs the failure with context and re-throws", async () => {
+  const failingSource: DevmetricsSource = {
+    listMetrics: async () => {
+      throw new Error("source unavailable");
+    },
+  };
+  const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+  const getReport = makeDevmetrics({
+    source: failingSource,
+    insightEngine: { summarize: async () => [] },
+    logger,
+  });
+
+  await expect(getReport()).rejects.toThrow("source unavailable");
+  expect(logger.error).toHaveBeenCalledWith(
+    "devmetrics.report.failed",
+    expect.objectContaining({ message: "source unavailable" }),
+  );
+});
+
+test("makeDevmetrics: when the insight engine throws, logs the failure and re-throws", async () => {
+  const stubSource: DevmetricsSource = { listMetrics: async () => [] };
+  const failingEngine: InsightEngine = {
+    summarize: async () => {
+      throw new Error("engine down");
+    },
+  };
+  const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+  const getReport = makeDevmetrics({
+    source: stubSource,
+    insightEngine: failingEngine,
+    logger,
+  });
+
+  await expect(getReport()).rejects.toThrow("engine down");
+  expect(logger.error).toHaveBeenCalledWith(
+    "devmetrics.report.failed",
+    expect.objectContaining({ message: "engine down" }),
+  );
+});
